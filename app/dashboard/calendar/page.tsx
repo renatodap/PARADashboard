@@ -1,33 +1,58 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Calendar, ChevronLeft, ChevronRight, Clock, List, LayoutGrid } from 'lucide-react'
+import { Calendar, ChevronLeft, ChevronRight, Clock, List, LayoutGrid, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
+import { tasksAPI } from '@/lib/api'
+import { showToast } from '@/lib/toast'
+import type { Task } from '@/types'
+import { WeekView } from '@/components/calendar/WeekView'
+import { MonthView } from '@/components/calendar/MonthView'
+import { TaskModal } from '@/components/tasks/TaskModal'
 
-type ViewMode = 'day' | 'week' | 'month' | 'timeline'
+type ViewMode = 'week' | 'month'
 
 const viewModes = [
-  { id: 'day' as ViewMode, label: 'Day', icon: Clock },
   { id: 'week' as ViewMode, label: 'Week', icon: LayoutGrid },
-  { id: 'month' as ViewMode, label: 'Month', icon: Calendar },
-  { id: 'timeline' as ViewMode, label: 'Timeline', icon: List }
+  { id: 'month' as ViewMode, label: 'Month', icon: Calendar }
 ]
 
 export default function CalendarPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('week')
   const [currentDate, setCurrentDate] = useState(new Date())
+  const [tasks, setTasks] = useState<Task[]>([])
+  const [loading, setLoading] = useState(true)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null)
+  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create')
+  const [newTaskDate, setNewTaskDate] = useState<Date | null>(null)
+  const [newTaskHour, setNewTaskHour] = useState<number | null>(null)
+
+  useEffect(() => {
+    loadTasks()
+  }, [])
+
+  const loadTasks = async () => {
+    try {
+      setLoading(true)
+      const data = await tasksAPI.getTasks()
+      setTasks(data)
+    } catch (error) {
+      showToast.error('Failed to load tasks')
+      console.error(error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const formatCurrentPeriod = () => {
     const month = currentDate.toLocaleDateString('en-US', { month: 'long' })
     const year = currentDate.getFullYear()
 
-    if (viewMode === 'day') {
-      const day = currentDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
-      return day
-    } else if (viewMode === 'week') {
+    if (viewMode === 'week') {
       return `${month} ${year}`
     } else {
       return `${month} ${year}`
@@ -37,9 +62,7 @@ export default function CalendarPage() {
   const navigatePeriod = (direction: 'prev' | 'next') => {
     const newDate = new Date(currentDate)
 
-    if (viewMode === 'day') {
-      newDate.setDate(newDate.getDate() + (direction === 'next' ? 1 : -1))
-    } else if (viewMode === 'week') {
+    if (viewMode === 'week') {
       newDate.setDate(newDate.getDate() + (direction === 'next' ? 7 : -7))
     } else if (viewMode === 'month') {
       newDate.setMonth(newDate.getMonth() + (direction === 'next' ? 1 : -1))
@@ -48,13 +71,64 @@ export default function CalendarPage() {
     setCurrentDate(newDate)
   }
 
+  const handleTaskClick = (task: Task) => {
+    setModalMode('edit')
+    setSelectedTask(task)
+    setNewTaskDate(null)
+    setNewTaskHour(null)
+    setModalOpen(true)
+  }
+
+  const handleSlotClick = (date: Date, hour?: number) => {
+    setModalMode('create')
+    setSelectedTask(null)
+    setNewTaskDate(date)
+    setNewTaskHour(hour ?? null)
+    setModalOpen(true)
+  }
+
+  const handleModalClose = () => {
+    setModalOpen(false)
+    setSelectedTask(null)
+    setNewTaskDate(null)
+    setNewTaskHour(null)
+  }
+
+  const handleModalSave = () => {
+    loadTasks()
+  }
+
+  const handleAutoSchedule = async () => {
+    try {
+      await tasksAPI.autoSchedule()
+      showToast.success('Tasks scheduled successfully')
+      loadTasks()
+    } catch (error) {
+      showToast.error('Failed to auto-schedule tasks')
+      console.error(error)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+        >
+          <Calendar className="w-12 h-12 text-para-area" />
+        </motion.div>
+      </div>
+    )
+  }
+
   return (
-    <div className="space-y-6 max-w-7xl">
+    <div className="flex flex-col h-[calc(100vh-8rem)] max-w-7xl">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6"
       >
         <div className="flex items-center gap-3">
           <motion.div
@@ -66,11 +140,20 @@ export default function CalendarPage() {
           </motion.div>
           <div>
             <h1 className="text-3xl font-heading font-bold">Calendar</h1>
-            <p className="text-sm text-muted-foreground">Plan your time with AI assistance</p>
+            <p className="text-sm text-muted-foreground">Visualize and schedule your tasks</p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="rounded-2xl gap-2"
+            onClick={handleAutoSchedule}
+          >
+            <Sparkles className="w-4 h-4" />
+            Auto-Schedule
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -106,7 +189,7 @@ export default function CalendarPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="flex gap-2 overflow-x-auto pb-2"
+        className="flex gap-2 mb-4"
       >
         {viewModes.map((mode) => {
           const Icon = mode.icon
@@ -117,7 +200,7 @@ export default function CalendarPage() {
               key={mode.id}
               onClick={() => setViewMode(mode.id)}
               className={cn(
-                'flex items-center gap-2 px-6 py-3 rounded-2xl border-2 transition-all duration-300 whitespace-nowrap',
+                'flex items-center gap-2 px-6 py-3 rounded-2xl border-2 transition-all duration-300',
                 isSelected
                   ? 'border-para-area bg-gradient-to-br from-para-area to-para-resource text-white shadow-lg'
                   : 'border-border bg-white/50 dark:bg-white/5 hover:border-para-area/50'
@@ -138,61 +221,36 @@ export default function CalendarPage() {
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.2 }}
+        className="flex-1 overflow-hidden"
       >
-        <Card className="glass p-6">
-          <div className="text-center py-20">
-            <motion.div
-              className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-para-area to-para-resource flex items-center justify-center"
-              animate={{
-                rotate: [0, 360],
-                scale: [1, 1.1, 1]
-              }}
-              transition={{
-                duration: 3,
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
-            >
-              <Calendar className="w-10 h-10 text-white" />
-            </motion.div>
-            <h3 className="text-xl font-semibold mb-2">
-              {viewMode.charAt(0).toUpperCase() + viewMode.slice(1)} View
-            </h3>
-            <p className="text-muted-foreground mb-6">
-              Calendar {viewMode} view coming soon! This will show your scheduled tasks and events.
-            </p>
-            <Button className="rounded-2xl">
-              Set up your first schedule
-            </Button>
-          </div>
+        <Card className="glass h-full flex flex-col">
+          {viewMode === 'week' && (
+            <WeekView
+              currentDate={currentDate}
+              tasks={tasks}
+              onTaskClick={handleTaskClick}
+              onSlotClick={handleSlotClick}
+            />
+          )}
+          {viewMode === 'month' && (
+            <MonthView
+              currentDate={currentDate}
+              tasks={tasks}
+              onTaskClick={handleTaskClick}
+              onDayClick={handleSlotClick}
+            />
+          )}
         </Card>
       </motion.div>
 
-      {/* AI Scheduling Hint */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-      >
-        <Card className="glass border-l-4 border-para-area p-6">
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-para-area to-para-resource flex items-center justify-center flex-shrink-0">
-              <Clock className="w-6 h-6 text-white" />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-lg mb-2">AI-Powered Scheduling</h3>
-              <p className="text-muted-foreground leading-relaxed mb-4">
-                Let AI automatically schedule your tasks based on priorities, deadlines, and your energy patterns.
-                The system learns your preferences and optimizes your calendar for maximum productivity.
-              </p>
-              <Button className="rounded-2xl gap-2">
-                <Clock className="w-4 h-4" />
-                Enable Auto-Schedule
-              </Button>
-            </div>
-          </div>
-        </Card>
-      </motion.div>
+      {/* Task Modal */}
+      <TaskModal
+        open={modalOpen}
+        onClose={handleModalClose}
+        onSave={handleModalSave}
+        task={selectedTask}
+        mode={modalMode}
+      />
     </div>
   )
 }

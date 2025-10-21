@@ -1,10 +1,11 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { FileText, Image as ImageIcon, Download, Trash2, Search, Filter } from "lucide-react"
+import { FileText, Image as ImageIcon, Download, Trash2, Search, Filter, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import FileUpload from "@/components/files/FileUpload"
+import { FilePreviewModal } from "@/components/files/FilePreviewModal"
 import { filesAPI } from "@/lib/api"
 import { showToast } from "@/lib/toast"
 
@@ -38,6 +39,8 @@ export default function FilesPage() {
   const [filterType, setFilterType] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [showUpload, setShowUpload] = useState(false)
+  const [previewFile, setPreviewFile] = useState<File | null>(null)
+  const [previewOpen, setPreviewOpen] = useState(false)
 
   useEffect(() => {
     loadFiles()
@@ -73,6 +76,16 @@ export default function FilesPage() {
 
   const handleDownload = (file: File) => {
     window.open(file.file_url, '_blank')
+  }
+
+  const handlePreview = (file: File) => {
+    setPreviewFile(file)
+    setPreviewOpen(true)
+  }
+
+  const handleClosePreview = () => {
+    setPreviewOpen(false)
+    setTimeout(() => setPreviewFile(null), 200)
   }
 
   const formatFileSize = (bytes: number) => {
@@ -327,6 +340,16 @@ export default function FilesPage() {
                   <Button
                     variant="outline"
                     size="icon"
+                    onClick={() => handlePreview(file)}
+                    title="Preview"
+                    className="flex-shrink-0"
+                  >
+                    <Eye className="w-4 h-4" />
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="icon"
                     onClick={() => handleDownload(file)}
                     title="Download"
                     className="flex-shrink-0"
@@ -349,6 +372,13 @@ export default function FilesPage() {
           ))}
         </div>
       )}
+
+      {/* File Preview Modal */}
+      <FilePreviewModal
+        file={previewFile}
+        open={previewOpen}
+        onClose={handleClosePreview}
+      />
     </div>
   )
 }
