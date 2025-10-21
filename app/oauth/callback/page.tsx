@@ -1,13 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { SuccessConfetti } from '@/components/animations/SuccessConfetti'
 import { showToast } from '@/lib/toast'
 import { CheckCircle2, XCircle, Loader2 } from 'lucide-react'
 
-export default function OAuthCallback() {
+function OAuthCallbackContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
@@ -126,5 +126,35 @@ export default function OAuthCallback() {
       {/* Success Confetti */}
       <SuccessConfetti show={showConfetti} />
     </div>
+  )
+}
+
+export default function OAuthCallback() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ type: "spring", stiffness: 300 }}
+          className="text-center"
+        >
+          <div className="space-y-6">
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+            >
+              <Loader2 className="w-16 h-16 mx-auto text-para-project" />
+            </motion.div>
+            <div>
+              <h2 className="text-2xl font-heading font-semibold mb-2">Processing...</h2>
+              <p className="text-muted-foreground">Connecting your Google account</p>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    }>
+      <OAuthCallbackContent />
+    </Suspense>
   )
 }
