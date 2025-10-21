@@ -1,13 +1,17 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { paraAPI, tasksAPI, reviewAPI } from '@/lib/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { PARACard } from '@/components/para/PARACard'
 import { ActivityTimeline } from '@/components/dashboard/ActivityTimeline'
 import { QuickActionsGrid } from '@/components/dashboard/QuickActionsGrid'
+import { AnimatedCheckbox } from '@/components/animations/AnimatedCheckbox'
+import { SkeletonCard } from '@/components/loading/SkeletonCard'
+import { SuccessConfetti } from '@/components/animations/SuccessConfetti'
+import { showToast } from '@/lib/toast'
 import type { PARAItem, Task, WeeklyReview } from '@/types'
 import { Sparkles, TrendingUp, Clock, Target, Brain, Zap, Calendar } from 'lucide-react'
 
@@ -16,12 +20,26 @@ export default function HomePage() {
   const [todayTasks, setTodayTasks] = useState<Task[]>([])
   const [latestReview, setLatestReview] = useState<WeeklyReview | null>(null)
   const [loading, setLoading] = useState(true)
+  const [showConfetti, setShowConfetti] = useState(false)
   const [stats, setStats] = useState({
     activeProjects: 0,
     todayTasks: 0,
     completedThisWeek: 0,
     upcomingDeadlines: 0
   })
+
+  const handleTaskComplete = async (taskId: string) => {
+    try {
+      await tasksAPI.updateTask(taskId, { status: 'completed', completed_at: new Date().toISOString() })
+      setShowConfetti(true)
+      showToast.success('Task completed! 🎉')
+      setTimeout(() => setShowConfetti(false), 3000)
+      loadDashboardData()
+    } catch (error) {
+      console.error('Failed to complete task:', error)
+      showToast.error('Failed to complete task')
+    }
+  }
 
   useEffect(() => {
     loadDashboardData()
@@ -86,10 +104,32 @@ export default function HomePage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-center animate-fadeIn">
-          <Sparkles className="w-16 h-16 text-para-project mx-auto mb-4 animate-pulse" />
-          <p className="text-lg font-medium text-muted-foreground">Loading your dashboard...</p>
+      <div className="space-y-8 max-w-7xl">
+        {/* Skeleton Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map((i) => (
+            <SkeletonCard key={i} variant="stat" />
+          ))}
+        </div>
+
+        {/* Skeleton Projects */}
+        <div>
+          <div className="h-8 w-48 rounded-lg bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 mb-6" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[1, 2, 3].map((i) => (
+              <SkeletonCard key={i} variant="project" />
+            ))}
+          </div>
+        </div>
+
+        {/* Skeleton Tasks */}
+        <div>
+          <div className="h-8 w-40 rounded-lg bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 mb-6" />
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <SkeletonCard key={i} variant="task" />
+            ))}
+          </div>
         </div>
       </div>
     )
@@ -394,54 +434,59 @@ export default function HomePage() {
             </Card>
           </motion.div>
         ) : (
-          <motion.div
-            className="space-y-3"
-            initial="hidden"
-            animate="visible"
-            variants={{
-              hidden: { opacity: 0 },
-              visible: {
-                opacity: 1,
-                transition: {
-                  staggerChildren: 0.05
+          <AnimatePresence mode="popLayout">
+            <motion.div
+              className="space-y-3"
+              initial="hidden"
+              animate="visible"
+              variants={{
+                hidden: { opacity: 0 },
+                visible: {
+                  opacity: 1,
+                  transition: {
+                    staggerChildren: 0.05
+                  }
                 }
-              }
-            }}
-          >
-            {todayTasks.map((task) => (
-              <motion.div
-                key={task.id}
-                variants={{
-                  hidden: { opacity: 0, x: -20 },
-                  visible: { opacity: 1, x: 0 }
-                }}
-              >
-                <Card className="glass hover:shadow-lg hover:-translate-y-1 transition-all duration-300 border-l-4 border-para-area/30 group">
-                  <CardContent className="py-4 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-4 flex-1">
-                      <motion.div
-                        whileHover={{ scale: 1.2, rotate: 5 }}
-                        className="w-6 h-6 rounded-lg border-2 border-para-area cursor-pointer flex-shrink-0"
+              }}
+            >
+              {todayTasks.map((task) => (
+                <motion.div
+                  key={task.id}
+                  variants={{
+                    hidden: { opacity: 0, x: -20 },
+                    visible: { opacity: 1, x: 0 }
+                  }}
+                  exit={{
+                    opacity: 0,
+                    x: 100,
+                    height: 0,
+                    marginBottom: 0,
+                    transition: { duration: 0.3 }
+                  }}
+                  layout
+                >
+                  <Card className="glass hover:shadow-lg hover:-translate-y-1 transition-all duration-300 border-l-4 border-para-area/30 group">
+                    <CardContent className="py-4 flex items-center gap-4">
+                      <AnimatedCheckbox
+                        checked={task.status === 'completed'}
+                        onChange={() => handleTaskComplete(task.id)}
+                        size="md"
+                        color="from-para-area to-para-resource"
                       />
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-lg">{task.title}</h3>
+                      <div className="flex-1 min-w-0">
+                        <h3 className={`font-semibold text-lg ${task.status === 'completed' ? 'line-through text-muted-foreground' : ''}`}>
+                          {task.title}
+                        </h3>
                         {task.description && (
-                          <p className="text-sm text-muted-foreground mt-1">{task.description}</p>
+                          <p className="text-sm text-muted-foreground mt-1 truncate">{task.description}</p>
                         )}
                       </div>
-                    </div>
-                    <Button
-                      size="sm"
-                      className="rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"
-                      variant="outline"
-                    >
-                      Mark Complete
-                    </Button>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </motion.div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </motion.div>
+          </AnimatePresence>
         )}
       </motion.div>
 
@@ -529,6 +574,9 @@ export default function HomePage() {
           </Card>
         </motion.div>
       )}
+
+      {/* Success Confetti for task completion */}
+      <SuccessConfetti show={showConfetti} />
     </div>
   )
 }

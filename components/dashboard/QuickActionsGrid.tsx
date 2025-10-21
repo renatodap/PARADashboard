@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import {
   Zap,
@@ -13,6 +14,7 @@ import {
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
+import { showToast } from '@/lib/toast'
 
 interface QuickAction {
   id: string
@@ -24,6 +26,8 @@ interface QuickAction {
 }
 
 export function QuickActionsGrid() {
+  const router = useRouter()
+
   const quickActions: QuickAction[] = [
     {
       id: 'auto-schedule',
@@ -31,7 +35,9 @@ export function QuickActionsGrid() {
       description: 'Fill your day with AI',
       icon: Zap,
       gradient: 'from-para-project to-para-area',
-      action: () => console.log('Auto-schedule')
+      action: () => {
+        showToast.info('Auto-schedule feature coming soon!')
+      }
     },
     {
       id: 'weekly-review',
@@ -39,7 +45,7 @@ export function QuickActionsGrid() {
       description: 'Reflect on progress',
       icon: Brain,
       gradient: 'from-para-area to-para-resource',
-      action: () => console.log('Weekly review')
+      action: () => router.push('/dashboard/review')
     },
     {
       id: 'view-calendar',
@@ -47,7 +53,7 @@ export function QuickActionsGrid() {
       description: 'Plan your week',
       icon: Calendar,
       gradient: 'from-para-resource to-para-archive',
-      action: () => console.log('View calendar')
+      action: () => router.push('/dashboard/calendar')
     },
     {
       id: 'insights',
@@ -55,7 +61,9 @@ export function QuickActionsGrid() {
       description: 'View analytics',
       icon: TrendingUp,
       gradient: 'from-para-archive to-para-project',
-      action: () => console.log('Insights')
+      action: () => {
+        showToast.info('Analytics dashboard coming soon!')
+      }
     }
   ]
 
