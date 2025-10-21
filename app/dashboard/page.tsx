@@ -97,13 +97,13 @@ export default function HomePage() {
     <div className="space-y-8 max-w-7xl animate-fadeIn">
       {/* Hero Header */}
       <div className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <Sparkles className="w-8 h-8 text-para-project animate-pulse" />
-          <h1 className="text-4xl font-heading font-bold text-gradient">
+        <div className="flex items-center gap-2 sm:gap-3 mb-2">
+          <Sparkles className="w-6 h-6 sm:w-8 sm:h-8 text-para-project animate-pulse" />
+          <h1 className="text-2xl sm:text-4xl font-heading font-bold text-gradient">
             Good {getGreeting()}!
           </h1>
         </div>
-        <p className="text-lg text-muted-foreground">
+        <p className="text-base sm:text-lg text-muted-foreground">
           Your PARA at a glance
         </p>
       </div>

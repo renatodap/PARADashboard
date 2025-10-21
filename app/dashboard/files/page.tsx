@@ -165,7 +165,7 @@ export default function FilesPage() {
       )}
 
       {/* Filters and Search */}
-      <div className="flex gap-4">
+      <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
           <input
@@ -179,28 +179,32 @@ export default function FilesPage() {
           />
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0">
           <Button
             variant={filterType === null ? "default" : "outline"}
             onClick={() => setFilterType(null)}
+            className="whitespace-nowrap"
           >
             All
           </Button>
           <Button
             variant={filterType === 'pdf' ? "default" : "outline"}
             onClick={() => setFilterType('pdf')}
+            className="whitespace-nowrap"
           >
             PDFs
           </Button>
           <Button
             variant={filterType === 'image' ? "default" : "outline"}
             onClick={() => setFilterType('image')}
+            className="whitespace-nowrap"
           >
             Images
           </Button>
           <Button
             variant={filterType === 'link' ? "default" : "outline"}
             onClick={() => setFilterType('link')}
+            className="whitespace-nowrap"
           >
             Links
           </Button>
@@ -227,12 +231,12 @@ export default function FilesPage() {
       ) : (
         <div className="grid grid-cols-1 gap-4">
           {filteredFiles.map((file) => (
-            <Card key={file.id} className="p-6 hover:shadow-lg transition-shadow duration-300">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4 flex-1">
+            <Card key={file.id} className="p-4 sm:p-6 hover:shadow-lg transition-shadow duration-300">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-4 flex-1 w-full sm:w-auto">
                   {/* File Icon / Thumbnail */}
                   <div className={`
-                    w-14 h-14 rounded-xl flex items-center justify-center overflow-hidden
+                    w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0
                     ${file.file_type === 'pdf' ? 'bg-para-project/10' :
                       file.file_type === 'image' ? 'bg-para-area/10' :
                       file.file_type === 'link' ? 'bg-para-resource/10' : 'bg-slate-100 dark:bg-slate-800'}
@@ -272,7 +276,7 @@ export default function FilesPage() {
                       {file.para_items?.title || file.file_name}
                     </h3>
 
-                    <div className="flex items-center gap-4 text-sm text-slate-600 dark:text-slate-400">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-sm text-slate-600 dark:text-slate-400">
                       {file.file_type !== 'link' && <span>{formatFileSize(file.file_size_bytes)}</span>}
                       {file.page_count && (
                         <span>{file.page_count} pages</span>
@@ -283,7 +287,8 @@ export default function FilesPage() {
                       {file.file_type === 'link' && file.metadata?.word_count && (
                         <span>{file.metadata.word_count} words</span>
                       )}
-                      <span>{formatDate(file.uploaded_at)}</span>
+                      <span className="hidden sm:inline">{formatDate(file.uploaded_at)}</span>
+                      <span className="sm:hidden">{new Date(file.uploaded_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
 
                       {file.para_items && (
                         <span className={`font-medium ${getPARAColor(file.para_items.para_type)}`}>
@@ -318,12 +323,13 @@ export default function FilesPage() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-2">
+                <div className="flex gap-2 w-full sm:w-auto justify-end">
                   <Button
                     variant="outline"
                     size="icon"
                     onClick={() => handleDownload(file)}
                     title="Download"
+                    className="flex-shrink-0"
                   >
                     <Download className="w-4 h-4" />
                   </Button>
@@ -333,7 +339,7 @@ export default function FilesPage() {
                     size="icon"
                     onClick={() => handleDelete(file.id)}
                     title="Delete"
-                    className="hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/30"
+                    className="hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/30 flex-shrink-0"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
