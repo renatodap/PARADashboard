@@ -6,10 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import type { Task } from '@/types'
-import { CheckSquare, Search, Plus, Sparkles, Calendar, Clock, Flag } from 'lucide-react'
+import { CheckSquare, Search, Plus, Sparkles, Calendar, Clock, Flag, Edit } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { formatDate, formatDuration } from '@/lib/utils'
 import { cn } from '@/lib/utils'
+import { TaskModal } from '@/components/tasks/TaskModal'
+import { motion } from 'framer-motion'
 
 export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([])
@@ -19,6 +21,9 @@ export default function TasksPage() {
   const [priorityFilter, setPriorityFilter] = useState<'all' | 'urgent' | 'high' | 'medium' | 'low'>('all')
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'in_progress' | 'completed'>('all')
   const [scheduling, setScheduling] = useState(false)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create')
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null)
 
   useEffect(() => {
     loadTasks()
@@ -99,6 +104,27 @@ export default function TasksPage() {
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200'
     }
+  }
+
+  const handleCreateTask = () => {
+    setModalMode('create')
+    setSelectedTask(null)
+    setModalOpen(true)
+  }
+
+  const handleEditTask = (task: Task) => {
+    setModalMode('edit')
+    setSelectedTask(task)
+    setModalOpen(true)
+  }
+
+  const handleModalClose = () => {
+    setModalOpen(false)
+    setSelectedTask(null)
+  }
+
+  const handleModalSave = () => {
+    loadTasks()
   }
 
   if (loading) {
@@ -185,7 +211,7 @@ export default function TasksPage() {
             <Sparkles className="w-4 h-4" />
             {scheduling ? 'Scheduling...' : 'Auto-Schedule'}
           </Button>
-          <Button className="rounded-2xl gap-2">
+          <Button onClick={handleCreateTask} className="rounded-2xl gap-2">
             <Plus className="w-4 h-4" />
             New Task
           </Button>
@@ -253,7 +279,7 @@ export default function TasksPage() {
                 : 'Start by creating your first task'}
             </p>
             {!searchQuery && priorityFilter === 'all' && statusFilter === 'all' && (
-              <Button className="rounded-2xl">
+              <Button onClick={handleCreateTask} className="rounded-2xl">
                 <Plus className="w-4 h-4 mr-2" />
                 Create Your First Task
               </Button>
@@ -266,7 +292,7 @@ export default function TasksPage() {
             <Card
               key={task.id}
               className={cn(
-                "hover:shadow-md hover:-translate-y-0.5 transition-all duration-300",
+                "group hover:shadow-md hover:-translate-y-0.5 transition-all duration-300",
                 task.status === 'completed' && 'opacity-60'
               )}
             >
@@ -285,7 +311,7 @@ export default function TasksPage() {
                   {/* Task Info */}
                   <div className="flex-1">
                     <div className="flex items-start justify-between gap-4">
-                      <div>
+                      <div className="flex-1">
                         <h3 className={cn(
                           "font-semibold text-lg",
                           task.status === 'completed' && 'line-through'
@@ -298,9 +324,19 @@ export default function TasksPage() {
                           </p>
                         )}
                       </div>
-                      <Badge className={cn("rounded-full", getPriorityColor(task.priority))}>
-                        {task.priority}
-                      </Badge>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <Badge className={cn("rounded-full", getPriorityColor(task.priority))}>
+                          {task.priority}
+                        </Badge>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleEditTask(task)}
+                          className="rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
 
                     {/* Task Metadata */}
@@ -331,6 +367,15 @@ export default function TasksPage() {
           ))}
         </div>
       )}
+
+      {/* Task Modal */}
+      <TaskModal
+        open={modalOpen}
+        onClose={handleModalClose}
+        onSave={handleModalSave}
+        task={selectedTask}
+        mode={modalMode}
+      />
     </div>
   )
 }
