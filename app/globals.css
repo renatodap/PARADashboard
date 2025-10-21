@@ -1,0 +1,186 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* 2026 Light Mode - Soft Cloud */
+    --background: 248 250 252; /* #F8FAFC */
+    --foreground: 30 41 59; /* #1E293B */
+    --card: 255 255 255; /* #FFFFFF */
+    --card-foreground: 30 41 59;
+    --popover: 255 255 255;
+    --popover-foreground: 30 41 59;
+    --primary: 124 58 237; /* #7C3AED */
+    --primary-foreground: 255 255 255;
+    --secondary: 226 232 240; /* #E2E8F0 */
+    --secondary-foreground: 30 41 59;
+    --muted: 248 250 252; /* #F8FAFC */
+    --muted-foreground: 100 116 139; /* #64748B */
+    --accent: 241 245 249; /* #F1F5F9 */
+    --accent-foreground: 30 41 59;
+    --destructive: 239 68 68; /* #EF4444 */
+    --destructive-foreground: 255 255 255;
+    --border: 226 232 240;
+    --input: 226 232 240;
+    --ring: 124 58 237;
+    --radius: 16px;
+  }
+
+  .dark {
+    /* 2026 Dark Mode - Deep Navy Purple */
+    --background: 23 13 45; /* #170D2D */
+    --foreground: 241 245 249; /* #F1F5F9 */
+    --card: 31 23 53; /* #1F1735 */
+    --card-foreground: 241 245 249;
+    --popover: 31 23 53;
+    --popover-foreground: 241 245 249;
+    --primary: 159 122 234; /* #9F7AEA (Lighter in dark mode) */
+    --primary-foreground: 255 255 255;
+    --secondary: 51 65 85; /* #334155 */
+    --secondary-foreground: 241 245 249;
+    --muted: 31 23 53;
+    --muted-foreground: 148 163 184; /* #94A3B8 */
+    --accent: 51 65 85;
+    --accent-foreground: 241 245 249;
+    --destructive: 220 38 38;
+    --destructive-foreground: 255 255 255;
+    --border: 51 65 85;
+    --input: 51 65 85;
+    --ring: 159 122 234;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+    @apply transition-colors duration-300 ease-smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    @apply selection:bg-para-project/20 selection:text-para-project;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
+  }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  /* Glass Morphism */
+  .glass {
+    @apply bg-white/70 backdrop-blur-xl border border-white/30;
+  }
+
+  .glass-dark {
+    @apply bg-[#1F1735]/80 backdrop-blur-xl border border-white/10;
+  }
+
+  /* Gradient Backgrounds */
+  .gradient-primary {
+    background: linear-gradient(135deg, #7C3AED 0%, #A78BFA 100%);
+  }
+
+  .gradient-success {
+    background: linear-gradient(135deg, #10B981 0%, #34D399 100%);
+  }
+
+  .gradient-warning {
+    background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
+  }
+
+  .gradient-error {
+    background: linear-gradient(135deg, #EF4444 0%, #F87171 100%);
+  }
+
+  /* PARA Card Styles */
+  .card-project {
+    @apply border-l-4 border-para-project shadow-project hover:shadow-project;
+  }
+
+  .card-area {
+    @apply border-l-4 border-para-area shadow-area hover:shadow-area;
+  }
+
+  .card-resource {
+    @apply border-l-4 border-para-resource shadow-resource hover:shadow-resource;
+  }
+
+  .card-archive {
+    @apply border-l-4 border-para-archive shadow-archive hover:shadow-archive;
+  }
+
+  /* Button Styles */
+  .btn-primary {
+    @apply gradient-primary text-white font-semibold uppercase tracking-wider;
+    @apply px-8 py-4 rounded-full shadow-md;
+    @apply hover:shadow-lg hover:-translate-y-0.5;
+    @apply active:translate-y-0;
+    @apply transition-all duration-300 ease-smooth;
+  }
+
+  .btn-icon {
+    @apply w-11 h-11 rounded-full bg-para-project/10;
+    @apply hover:bg-para-project/20 hover:scale-105;
+    @apply transition-all duration-200 ease-smooth;
+  }
+
+  /* FAB (Floating Action Button) */
+  .fab {
+    @apply gradient-primary backdrop-blur-md;
+    @apply shadow-lg shadow-para-project/30;
+    @apply hover:shadow-xl hover:shadow-para-project/40;
+    @apply active:scale-95;
+    @apply transition-all duration-300 ease-bounce;
+  }
+
+  /* Focus Ring */
+  .focus-ring {
+    @apply focus:outline-none focus:ring-4 focus:ring-para-project/10;
+  }
+
+  /* Shimmer Loading */
+  .shimmer {
+    @apply bg-gradient-to-r from-muted via-muted-foreground/10 to-muted;
+    @apply bg-[length:200%_100%] animate-shimmer;
+  }
+}
+
+@layer utilities {
+  /* Text Gradients */
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, #7C3AED 0%, #A78BFA 100%);
+  }
+
+  /* Tap Target Sizing (Mobile-First) */
+  .tap-target {
+    @apply min-h-[48px] min-w-[48px];
+  }
+
+  /* Safe Area Insets (Mobile) */
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
