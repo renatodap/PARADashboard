@@ -138,7 +138,7 @@ export default function LoginPage() {
             {/* Footer */}
             <div className="text-center text-sm">
               <span className="text-muted-foreground">Don't have an account? </span>
-              <Link href="/signup" className="text-para-project hover:underline font-medium">
+              <Link href="/auth/signup" className="text-para-project hover:underline font-medium">
                 Sign up
               </Link>
             </div>
