@@ -17,15 +17,15 @@ import {
 import { cn } from '@/lib/utils'
 
 const navigation = [
-  { name: 'Home', href: '/', icon: Home },
-  { name: 'Projects', href: '/projects', icon: FolderKanban },
-  { name: 'Areas', href: '/areas', icon: Layers },
-  { name: 'Resources', href: '/resources', icon: BookOpen },
-  { name: 'Archives', href: '/archives', icon: Archive },
-  { name: 'Tasks', href: '/tasks', icon: CheckSquare },
-  { name: 'Calendar', href: '/calendar', icon: Calendar },
-  { name: 'Files', href: '/files', icon: Upload },
-  { name: 'Weekly Review', href: '/review', icon: FileText },
+  { name: 'Home', href: '/dashboard', icon: Home },
+  { name: 'Projects', href: '/dashboard/projects', icon: FolderKanban },
+  { name: 'Areas', href: '/dashboard/areas', icon: Layers },
+  { name: 'Resources', href: '/dashboard/resources', icon: BookOpen },
+  { name: 'Archives', href: '/dashboard/archives', icon: Archive },
+  { name: 'Tasks', href: '/dashboard/tasks', icon: CheckSquare },
+  { name: 'Calendar', href: '/dashboard/calendar', icon: Calendar },
+  { name: 'Files', href: '/dashboard/files', icon: Upload },
+  { name: 'Weekly Review', href: '/dashboard/review', icon: FileText },
 ]
 
 export function Sidebar() {

@@ -23,13 +23,13 @@ export function TopNav() {
 
   async function handleSignOut() {
     await signOut()
-    router.push('/login')
+    router.push('/auth/login')
   }
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault()
     if (searchQuery.trim()) {
-      router.push(`/search?q=${encodeURIComponent(searchQuery)}`)
+      router.push(`/dashboard/search?q=${encodeURIComponent(searchQuery)}`)
     }
   }
 
@@ -57,7 +57,7 @@ export function TopNav() {
         </Button>
 
         {/* Settings */}
-        <Button variant="ghost" size="icon" onClick={() => router.push('/settings')} className="hover:scale-105 transition-transform">
+        <Button variant="ghost" size="icon" onClick={() => router.push('/dashboard/settings')} className="hover:scale-105 transition-transform">
           <Settings className="w-5 h-5" />
         </Button>
 
