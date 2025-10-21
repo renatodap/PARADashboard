@@ -17,7 +17,8 @@ import {
   Clock,
   TrendingUp,
   Mail,
-  RefreshCw
+  RefreshCw,
+  MessageSquare
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -94,6 +95,16 @@ const commands: Command[] = [
     },
     keywords: ['gmail', 'email', 'inbox', 'google']
   },
+  {
+    id: 'open-chat',
+    label: 'AI Assistant',
+    description: 'Chat with your AI assistant',
+    icon: MessageSquare,
+    category: 'action',
+    shortcut: '/',
+    action: () => window.location.href = '/dashboard/chat',
+    keywords: ['chat', 'ai', 'assistant', 'help', 'ask']
+  },
 
   // Navigation
   {
@@ -133,6 +144,15 @@ const commands: Command[] = [
     category: 'navigate',
     action: () => window.location.href = '/dashboard/tasks',
     keywords: ['todo', 'task', 'list']
+  },
+  {
+    id: 'nav-chat',
+    label: 'Chat',
+    description: 'Go to AI chat',
+    icon: MessageSquare,
+    category: 'navigate',
+    action: () => window.location.href = '/dashboard/chat',
+    keywords: ['chat', 'ai', 'assistant', 'conversation']
   },
   {
     id: 'nav-settings',

@@ -263,3 +263,68 @@ export const googleAPI = {
       })
     }),
 }
+
+// Chat API (Conversational AI Agent)
+export const chatAPI = {
+  // Send message to agent
+  sendMessage: (message: string, conversationId?: string): Promise<{
+    conversation_id: string,
+    message_id: string,
+    response: string,
+    tool_calls?: any[],
+    pending_confirmations?: any[],
+    usage: { input_tokens: number, output_tokens: number, cost_usd: number }
+  }> =>
+    apiClient('/api/agent/chat', {
+      method: 'POST',
+      body: JSON.stringify({
+        message,
+        conversation_id: conversationId
+      })
+    }),
+
+  // Get all conversations
+  getConversations: (): Promise<{ conversations: any[] }> =>
+    apiClient('/api/agent/conversations'),
+
+  // Get conversation history
+  getConversation: (id: string): Promise<{
+    conversation: any,
+    messages: any[]
+  }> =>
+    apiClient(`/api/agent/conversations/${id}`),
+
+  // Delete conversation
+  deleteConversation: (id: string): Promise<void> =>
+    apiClient(`/api/agent/conversations/${id}`, {
+      method: 'DELETE'
+    }),
+
+  // Archive conversation
+  archiveConversation: (id: string): Promise<any> =>
+    apiClient(`/api/agent/conversations/${id}/archive`, {
+      method: 'PATCH'
+    }),
+
+  // Get pending confirmations
+  getConfirmations: (): Promise<{ confirmations: any[] }> =>
+    apiClient('/api/agent/confirmations'),
+
+  // Approve confirmation
+  approveConfirmation: (id: string): Promise<{
+    message: string,
+    result: any
+  }> =>
+    apiClient(`/api/agent/confirmations/${id}/approve`, {
+      method: 'POST'
+    }),
+
+  // Reject confirmation
+  rejectConfirmation: (id: string, reason?: string): Promise<{
+    message: string
+  }> =>
+    apiClient(`/api/agent/confirmations/${id}/reject`, {
+      method: 'POST',
+      body: JSON.stringify({ reason })
+    }),
+}

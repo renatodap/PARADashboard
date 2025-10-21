@@ -6,6 +6,7 @@ import { TopNav } from '@/components/layout/TopNav'
 import { FloatingActionButton } from '@/components/capture/FloatingActionButton'
 import { QuickCaptureModal } from '@/components/capture/QuickCaptureModal'
 import { CommandPalette } from '@/components/command/CommandPalette'
+import { FloatingChatButton } from '@/components/chat/FloatingChatButton'
 
 export default function DashboardLayout({
   children,
@@ -55,6 +56,9 @@ export default function DashboardLayout({
         isOpen={captureModalOpen}
         onClose={() => setCaptureModalOpen(false)}
       />
+
+      {/* Floating Chat Button */}
+      <FloatingChatButton />
 
       {/* Command Palette */}
       <CommandPalette

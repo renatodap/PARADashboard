@@ -11,7 +11,8 @@ import {
   Target,
   Clock,
   Sparkles,
-  RefreshCw
+  RefreshCw,
+  MessageSquare
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
@@ -31,6 +32,14 @@ export function QuickActionsGrid() {
   const router = useRouter()
 
   const quickActions: QuickAction[] = [
+    {
+      id: 'ai-assistant',
+      label: 'AI Assistant',
+      description: 'Chat with your AI',
+      icon: MessageSquare,
+      gradient: 'from-purple-500 to-pink-500',
+      action: () => router.push('/dashboard/chat')
+    },
     {
       id: 'auto-schedule',
       label: 'Auto-Schedule',
