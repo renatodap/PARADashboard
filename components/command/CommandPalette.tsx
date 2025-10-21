@@ -15,7 +15,9 @@ import {
   Archive,
   Settings,
   Clock,
-  TrendingUp
+  TrendingUp,
+  Mail,
+  RefreshCw
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -67,6 +69,31 @@ const commands: Command[] = [
     action: () => console.log('Weekly review'),
     keywords: ['review', 'reflect', 'weekly']
   },
+  {
+    id: 'sync-google-tasks',
+    label: 'Sync Google Tasks',
+    description: 'Sync tasks with Google',
+    icon: RefreshCw,
+    category: 'action',
+    shortcut: 'G',
+    action: () => window.dispatchEvent(new CustomEvent('sync-google-tasks')),
+    keywords: ['google', 'sync', 'tasks', 'calendar']
+  },
+  {
+    id: 'check-gmail',
+    label: 'Check Gmail',
+    description: 'View unread emails',
+    icon: Mail,
+    category: 'action',
+    action: () => {
+      window.location.href = '/dashboard'
+      setTimeout(() => {
+        const gmailWidget = document.querySelector('[data-gmail-widget]')
+        gmailWidget?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }, 500)
+    },
+    keywords: ['gmail', 'email', 'inbox', 'google']
+  },
 
   // Navigation
   {
@@ -106,6 +133,15 @@ const commands: Command[] = [
     category: 'navigate',
     action: () => window.location.href = '/dashboard/tasks',
     keywords: ['todo', 'task', 'list']
+  },
+  {
+    id: 'nav-settings',
+    label: 'Settings',
+    description: 'Manage integrations',
+    icon: Settings,
+    category: 'navigate',
+    action: () => window.location.href = '/dashboard/settings',
+    keywords: ['settings', 'config', 'google', 'integrations']
   },
 
   // Create

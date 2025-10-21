@@ -203,3 +203,63 @@ export const filesAPI = {
       body: JSON.stringify({ url })
     }),
 }
+
+// Google API
+export const googleAPI = {
+  // OAuth
+  getOAuthUrl: (): Promise<{ auth_url: string, state: string, expires_in: number }> =>
+    apiClient('/api/oauth/google/init'),
+
+  revokeAccess: (): Promise<{ message: string }> =>
+    apiClient('/api/oauth/google/revoke', {
+      method: 'DELETE'
+    }),
+
+  // Gmail
+  getUnreadEmails: (maxResults?: number): Promise<{ count: number, emails: any[] }> =>
+    apiClient(`/api/google/gmail/unread${maxResults ? `?max_results=${maxResults}` : ''}`),
+
+  searchEmails: (query: string, maxResults?: number, after?: string): Promise<{ count: number, emails: any[] }> =>
+    apiClient('/api/google/gmail/search', {
+      method: 'POST',
+      body: JSON.stringify({
+        query,
+        max_results: maxResults,
+        after
+      })
+    }),
+
+  emailToTask: (emailId: string, threadId: string, createGoogleTask?: boolean): Promise<{
+    message: string,
+    task: any,
+    google_task?: any
+  }> =>
+    apiClient('/api/google/gmail/email-to-task', {
+      method: 'POST',
+      body: JSON.stringify({
+        email_id: emailId,
+        thread_id: threadId,
+        create_google_task: createGoogleTask
+      })
+    }),
+
+  // Google Tasks
+  getGoogleTasks: (): Promise<{ count: number, tasks: any[] }> =>
+    apiClient('/api/google/tasks/google'),
+
+  syncTasks: (taskIds?: string[], syncToGoogle?: boolean, syncFromGoogle?: boolean): Promise<{
+    message: string,
+    synced_to_google: number,
+    synced_from_google: number,
+    tasks_to_google: any[],
+    tasks_from_google: any[]
+  }> =>
+    apiClient('/api/google/tasks/sync', {
+      method: 'POST',
+      body: JSON.stringify({
+        task_ids: taskIds,
+        sync_to_google: syncToGoogle,
+        sync_from_google: syncFromGoogle
+      })
+    }),
+}

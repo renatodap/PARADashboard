@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button'
 import { PARACard } from '@/components/para/PARACard'
 import { ActivityTimeline } from '@/components/dashboard/ActivityTimeline'
 import { QuickActionsGrid } from '@/components/dashboard/QuickActionsGrid'
+import { GmailInboxWidget } from '@/components/google/GmailInboxWidget'
+import { EmailToTaskModal } from '@/components/google/EmailToTaskModal'
 import { AnimatedCheckbox } from '@/components/animations/AnimatedCheckbox'
 import { SkeletonCard } from '@/components/loading/SkeletonCard'
 import { SuccessConfetti } from '@/components/animations/SuccessConfetti'
@@ -21,6 +23,8 @@ export default function HomePage() {
   const [latestReview, setLatestReview] = useState<WeeklyReview | null>(null)
   const [loading, setLoading] = useState(true)
   const [showConfetti, setShowConfetti] = useState(false)
+  const [selectedEmail, setSelectedEmail] = useState<any>(null)
+  const [emailModalOpen, setEmailModalOpen] = useState(false)
   const [stats, setStats] = useState({
     activeProjects: 0,
     todayTasks: 0,
@@ -535,6 +539,21 @@ export default function HomePage() {
         </motion.div>
       </div>
 
+      {/* Gmail Inbox Widget */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6 }}
+      >
+        <GmailInboxWidget
+          onEmailConvert={(email) => {
+            setSelectedEmail(email)
+            setEmailModalOpen(true)
+          }}
+          maxEmails={5}
+        />
+      </motion.div>
+
       {/* Weekly Review Prompt */}
       {latestReview && (
         <motion.div
@@ -577,6 +596,19 @@ export default function HomePage() {
 
       {/* Success Confetti for task completion */}
       <SuccessConfetti show={showConfetti} />
+
+      {/* Email to Task Modal */}
+      <EmailToTaskModal
+        email={selectedEmail}
+        isOpen={emailModalOpen}
+        onClose={() => {
+          setEmailModalOpen(false)
+          setSelectedEmail(null)
+        }}
+        onSuccess={() => {
+          loadDashboardData()
+        }}
+      />
     </div>
   )
 }

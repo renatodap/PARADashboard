@@ -10,11 +10,13 @@ import {
   FileText,
   Target,
   Clock,
-  Sparkles
+  Sparkles,
+  RefreshCw
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import { showToast } from '@/lib/toast'
+import { googleAPI } from '@/lib/api'
 
 interface QuickAction {
   id: string
@@ -63,6 +65,24 @@ export function QuickActionsGrid() {
       gradient: 'from-para-archive to-para-project',
       action: () => {
         showToast.info('Analytics dashboard coming soon!')
+      }
+    },
+    {
+      id: 'sync-google',
+      label: 'Sync Google',
+      description: 'Sync with Google Tasks',
+      icon: RefreshCw,
+      gradient: 'from-blue-500 to-purple-500',
+      action: async () => {
+        try {
+          showToast.info('Syncing with Google Tasks...')
+          const result = await googleAPI.syncTasks(undefined, true, true)
+          showToast.success(
+            `Synced! ${result.synced_to_google} → Google, ${result.synced_from_google} ← Google`
+          )
+        } catch (error: any) {
+          showToast.error('Failed to sync. Connect Google in Settings.')
+        }
       }
     }
   ]
