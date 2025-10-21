@@ -26,7 +26,7 @@ export function TaskModal({ open, onClose, onSave, task, mode }: TaskModalProps)
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [priority, setPriority] = useState<'low' | 'medium' | 'high' | 'urgent'>('medium')
-  const [status, setStatus] = useState<'pending' | 'in_progress' | 'completed'>('pending')
+  const [status, setStatus] = useState<'pending' | 'in_progress' | 'completed' | 'cancelled'>('pending')
   const [dueDate, setDueDate] = useState('')
   const [estimatedDuration, setEstimatedDuration] = useState('')
   const [paraItemId, setParaItemId] = useState('')
@@ -206,6 +206,7 @@ export function TaskModal({ open, onClose, onSave, task, mode }: TaskModalProps)
                   <SelectItem value="pending">Pending</SelectItem>
                   <SelectItem value="in_progress">In Progress</SelectItem>
                   <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
                 </SelectContent>
               </Select>
             </div>
