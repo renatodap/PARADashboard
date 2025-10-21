@@ -1,213 +1,198 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { tasksAPI } from '@/lib/api'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useState } from 'react'
+import { motion } from 'framer-motion'
+import { Calendar, ChevronLeft, ChevronRight, Clock, List, LayoutGrid } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import type { Task } from '@/types'
-import { Calendar as CalendarIcon, Sparkles, Clock, CheckCircle2 } from 'lucide-react'
-import { formatDate, formatDuration } from '@/lib/utils'
+import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 
+type ViewMode = 'day' | 'week' | 'month' | 'timeline'
+
+const viewModes = [
+  { id: 'day' as ViewMode, label: 'Day', icon: Clock },
+  { id: 'week' as ViewMode, label: 'Week', icon: LayoutGrid },
+  { id: 'month' as ViewMode, label: 'Month', icon: Calendar },
+  { id: 'timeline' as ViewMode, label: 'Timeline', icon: List }
+]
+
 export default function CalendarPage() {
-  const [tasks, setTasks] = useState<Task[]>([])
-  const [loading, setLoading] = useState(true)
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date())
-  const [scheduling, setScheduling] = useState(false)
+  const [viewMode, setViewMode] = useState<ViewMode>('week')
+  const [currentDate, setCurrentDate] = useState(new Date())
 
-  useEffect(() => {
-    loadTasks()
-  }, [])
+  const formatCurrentPeriod = () => {
+    const month = currentDate.toLocaleDateString('en-US', { month: 'long' })
+    const year = currentDate.getFullYear()
 
-  async function loadTasks() {
-    try {
-      const data = await tasksAPI.getTasks()
-      // Filter tasks with due dates
-      const scheduledTasks = data.filter(t => t.due_date)
-      setTasks(scheduledTasks)
-    } catch (error) {
-      console.error('Failed to load tasks:', error)
-    } finally {
-      setLoading(false)
+    if (viewMode === 'day') {
+      const day = currentDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+      return day
+    } else if (viewMode === 'week') {
+      return `${month} ${year}`
+    } else {
+      return `${month} ${year}`
     }
   }
 
-  async function handleAutoSchedule() {
-    setScheduling(true)
-    try {
-      await tasksAPI.autoSchedule()
-      await loadTasks()
-    } catch (error) {
-      console.error('Auto-schedule failed:', error)
-    } finally {
-      setScheduling(false)
+  const navigatePeriod = (direction: 'prev' | 'next') => {
+    const newDate = new Date(currentDate)
+
+    if (viewMode === 'day') {
+      newDate.setDate(newDate.getDate() + (direction === 'next' ? 1 : -1))
+    } else if (viewMode === 'week') {
+      newDate.setDate(newDate.getDate() + (direction === 'next' ? 7 : -7))
+    } else if (viewMode === 'month') {
+      newDate.setMonth(newDate.getMonth() + (direction === 'next' ? 1 : -1))
     }
-  }
 
-  // Group tasks by date
-  const tasksByDate = tasks.reduce((acc, task) => {
-    if (!task.due_date) return acc
-    const date = new Date(task.due_date).toDateString()
-    if (!acc[date]) {
-      acc[date] = []
-    }
-    acc[date].push(task)
-    return acc
-  }, {} as Record<string, Task[]>)
-
-  // Get next 7 days
-  const next7Days = Array.from({ length: 7 }, (_, i) => {
-    const date = new Date()
-    date.setDate(date.getDate() + i)
-    return date
-  })
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-center animate-fadeIn">
-          <CalendarIcon className="w-16 h-16 text-para-project mx-auto mb-4 animate-pulse" />
-          <p className="text-lg font-medium text-muted-foreground">Loading calendar...</p>
-        </div>
-      </div>
-    )
+    setCurrentDate(newDate)
   }
 
   return (
-    <div className="space-y-8 max-w-7xl animate-fadeIn">
+    <div className="space-y-6 max-w-7xl">
       {/* Header */}
-      <div>
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 rounded-2xl bg-para-area/10 flex items-center justify-center">
-            <CalendarIcon className="w-6 h-6 text-para-area" />
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+      >
+        <div className="flex items-center gap-3">
+          <motion.div
+            className="w-12 h-12 rounded-2xl bg-gradient-to-br from-para-area to-para-resource flex items-center justify-center"
+            whileHover={{ rotate: 180 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Calendar className="w-6 h-6 text-white" />
+          </motion.div>
+          <div>
+            <h1 className="text-3xl font-heading font-bold">Calendar</h1>
+            <p className="text-sm text-muted-foreground">Plan your time with AI assistance</p>
           </div>
-          <h1 className="text-4xl font-heading font-bold">Calendar</h1>
         </div>
-        <p className="text-lg text-muted-foreground">
-          Your AI-powered schedule for the week ahead
-        </p>
-      </div>
 
-      {/* Auto-Schedule CTA */}
-      <Card className="glass border-l-4 border-para-project">
-        <CardContent className="py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl gradient-primary flex items-center justify-center">
-                <Sparkles className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h3 className="font-heading font-semibold text-lg">AI Auto-Schedule</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Let AI organize your tasks across the week based on priority and estimated time
-                </p>
-              </div>
-            </div>
-            <Button
-              onClick={handleAutoSchedule}
-              disabled={scheduling}
-              className="rounded-2xl"
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="rounded-2xl"
+            onClick={() => setCurrentDate(new Date())}
+          >
+            Today
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="rounded-xl"
+            onClick={() => navigatePeriod('prev')}
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+          <div className="min-w-[200px] text-center font-semibold">
+            {formatCurrentPeriod()}
+          </div>
+          <Button
+            variant="outline"
+            size="icon"
+            className="rounded-xl"
+            onClick={() => navigatePeriod('next')}
+          >
+            <ChevronRight className="w-4 h-4" />
+          </Button>
+        </div>
+      </motion.div>
+
+      {/* View Mode Selector */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="flex gap-2 overflow-x-auto pb-2"
+      >
+        {viewModes.map((mode) => {
+          const Icon = mode.icon
+          const isSelected = viewMode === mode.id
+
+          return (
+            <motion.button
+              key={mode.id}
+              onClick={() => setViewMode(mode.id)}
+              className={cn(
+                'flex items-center gap-2 px-6 py-3 rounded-2xl border-2 transition-all duration-300 whitespace-nowrap',
+                isSelected
+                  ? 'border-para-area bg-gradient-to-br from-para-area to-para-resource text-white shadow-lg'
+                  : 'border-border bg-white/50 dark:bg-white/5 hover:border-para-area/50'
+              )}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
-              {scheduling ? 'Scheduling...' : 'Run Auto-Schedule'}
+              <Icon className="w-5 h-5" />
+              <span className="font-medium">{mode.label}</span>
+            </motion.button>
+          )
+        })}
+      </motion.div>
+
+      {/* Calendar Content */}
+      <motion.div
+        key={viewMode}
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.2 }}
+      >
+        <Card className="glass p-6">
+          <div className="text-center py-20">
+            <motion.div
+              className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-para-area to-para-resource flex items-center justify-center"
+              animate={{
+                rotate: [0, 360],
+                scale: [1, 1.1, 1]
+              }}
+              transition={{
+                duration: 3,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            >
+              <Calendar className="w-10 h-10 text-white" />
+            </motion.div>
+            <h3 className="text-xl font-semibold mb-2">
+              {viewMode.charAt(0).toUpperCase() + viewMode.slice(1)} View
+            </h3>
+            <p className="text-muted-foreground mb-6">
+              Calendar {viewMode} view coming soon! This will show your scheduled tasks and events.
+            </p>
+            <Button className="rounded-2xl">
+              Set up your first schedule
             </Button>
           </div>
-        </CardContent>
-      </Card>
+        </Card>
+      </motion.div>
 
-      {/* Weekly View */}
-      <div>
-        <h2 className="text-2xl font-heading font-semibold mb-6">Next 7 Days</h2>
-        <div className="space-y-4">
-          {next7Days.map((date) => {
-            const dateStr = date.toDateString()
-            const dayTasks = tasksByDate[dateStr] || []
-            const isToday = dateStr === new Date().toDateString()
-            const totalMinutes = dayTasks.reduce((sum, t) => sum + (t.estimated_duration_minutes || 0), 0)
-
-            return (
-              <Card
-                key={dateStr}
-                className={cn(
-                  "glass transition-all duration-300",
-                  isToday && "border-l-4 border-para-project shadow-project"
-                )}
-              >
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="flex items-center gap-2">
-                        {isToday && (
-                          <div className="w-2 h-2 rounded-full bg-para-project animate-pulse" />
-                        )}
-                        <span className={isToday ? 'text-para-project' : ''}>
-                          {date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-                        </span>
-                        {isToday && (
-                          <span className="text-sm font-normal text-para-project">Today</span>
-                        )}
-                      </CardTitle>
-                    </div>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-4 h-4" />
-                        {formatDuration(totalMinutes)}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <CheckCircle2 className="w-4 h-4" />
-                        {dayTasks.filter(t => t.status === 'completed').length}/{dayTasks.length} tasks
-                      </div>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {dayTasks.length === 0 ? (
-                    <div className="py-8 text-center text-muted-foreground">
-                      <CalendarIcon className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                      <p className="text-sm">No tasks scheduled</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {dayTasks.map((task) => (
-                        <div
-                          key={task.id}
-                          className={cn(
-                            "flex items-center gap-3 p-3 rounded-xl hover:bg-white/50 dark:hover:bg-white/5 transition-colors",
-                            task.status === 'completed' && 'opacity-60'
-                          )}
-                        >
-                          <div className={cn(
-                            "w-1 h-12 rounded-full",
-                            task.priority === 'urgent' ? 'bg-red-500' :
-                            task.priority === 'high' ? 'bg-orange-500' :
-                            task.priority === 'medium' ? 'bg-yellow-500' :
-                            'bg-gray-400'
-                          )} />
-                          <div className="flex-1">
-                            <div className={cn(
-                              "font-medium",
-                              task.status === 'completed' && 'line-through'
-                            )}>
-                              {task.title}
-                            </div>
-                            {task.estimated_duration_minutes && (
-                              <div className="text-xs text-muted-foreground mt-1">
-                                {formatDuration(task.estimated_duration_minutes)}
-                              </div>
-                            )}
-                          </div>
-                          {task.status === 'completed' && (
-                            <CheckCircle2 className="w-5 h-5 text-green-600" />
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )
-          })}
-        </div>
-      </div>
+      {/* AI Scheduling Hint */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+      >
+        <Card className="glass border-l-4 border-para-area p-6">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-para-area to-para-resource flex items-center justify-center flex-shrink-0">
+              <Clock className="w-6 h-6 text-white" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-lg mb-2">AI-Powered Scheduling</h3>
+              <p className="text-muted-foreground leading-relaxed mb-4">
+                Let AI automatically schedule your tasks based on priorities, deadlines, and your energy patterns.
+                The system learns your preferences and optimizes your calendar for maximum productivity.
+              </p>
+              <Button className="rounded-2xl gap-2">
+                <Clock className="w-4 h-4" />
+                Enable Auto-Schedule
+              </Button>
+            </div>
+          </div>
+        </Card>
+      </motion.div>
     </div>
   )
 }
