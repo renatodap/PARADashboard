@@ -176,12 +176,12 @@ export default function OnboardingPage() {
     if (currentStep < ONBOARDING_STEPS.length - 1) {
       setCurrentStep(currentStep + 1)
     } else {
-      router.push('/')
+      router.push('/dashboard')
     }
   }
 
   function handleSkip() {
-    router.push('/')
+    router.push('/dashboard')
   }
 
   const step = ONBOARDING_STEPS[currentStep]
