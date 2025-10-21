@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -42,6 +43,7 @@ const typeConfig = {
 }
 
 export function PARAList({ type }: PARAListProps) {
+  const router = useRouter()
   const [items, setItems] = useState<PARAItem[]>([])
   const [loading, setLoading] = useState(true)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -231,7 +233,10 @@ export function PARAList({ type }: PARAListProps) {
                     </div>
                   ) : (
                     <div className="flex items-start justify-between">
-                      <div className="flex-1">
+                      <div
+                        className="flex-1 cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() => router.push(`/dashboard/${type}s/${item.id}`)}
+                      >
                         <h3 className="text-lg font-semibold mb-2">{item.title}</h3>
                         {item.description && (
                           <p className="text-sm text-muted-foreground mb-3">{item.description}</p>
@@ -247,7 +252,10 @@ export function PARAList({ type }: PARAListProps) {
                       </div>
                       <div className="flex gap-2">
                         <Button
-                          onClick={() => startEdit(item)}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            startEdit(item)
+                          }}
                           variant="ghost"
                           size="icon"
                           className="rounded-xl"
@@ -255,7 +263,10 @@ export function PARAList({ type }: PARAListProps) {
                           <Edit className="w-4 h-4" />
                         </Button>
                         <Button
-                          onClick={() => handleDelete(item.id, item.title)}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDelete(item.id, item.title)
+                          }}
                           variant="ghost"
                           size="icon"
                           className="rounded-xl text-red-600 hover:text-red-700 hover:bg-red-50"

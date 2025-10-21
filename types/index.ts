@@ -124,3 +124,63 @@ export interface AutoScheduleResponse {
     cost_usd: number
   }
 }
+
+// ============================================================
+// PARA DETAIL PAGE TYPES
+// ============================================================
+
+export type TaskDetailPriority = 'low' | 'medium' | 'high'
+
+export interface PARATask {
+  id: string
+  para_item_id: string
+  user_id: string
+  title: string
+  description?: string
+  completed: boolean
+  priority: TaskDetailPriority
+  due_date?: string
+  completed_at?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface PARANote {
+  id: string
+  para_item_id: string
+  user_id: string
+  content: string  // Markdown content
+  created_at: string
+  updated_at: string
+}
+
+export interface PARAFile {
+  id: string
+  para_item_id: string
+  user_id: string
+  file_name: string
+  file_url: string
+  file_type: string
+  file_size?: number
+  uploaded_at: string
+}
+
+export interface PARARelationship {
+  id: string
+  from_item_id: string
+  to_item_id: string
+  user_id: string
+  relationship_type: string
+  created_at: string
+  related_item?: PARAItem  // The linked item's details
+}
+
+export interface PARAItemDetailed extends PARAItem {
+  tasks: PARATask[]
+  notes: PARANote[]
+  files: PARAFile[]
+  relationships: PARARelationship[]
+  active_tasks_count: number
+  completed_tasks_count: number
+  completion_percentage: number
+}

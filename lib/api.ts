@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import type { PARAItem, Task, WeeklyReview, PARAClassification, AutoScheduleResponse } from '@/types'
+import type { PARAItem, Task, WeeklyReview, PARAClassification, AutoScheduleResponse, PARAItemDetailed, PARATask, PARANote, PARAFile, PARARelationship } from '@/types'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
@@ -52,6 +52,82 @@ export const paraAPI = {
     apiClient('/api/para/classify', {
       method: 'POST',
       body: JSON.stringify({ title, description, context })
+    }),
+
+  // Detail page APIs
+  getItemDetailed: (id: string): Promise<PARAItemDetailed> =>
+    apiClient(`/api/para/${id}/detailed`),
+
+  // Tasks
+  getTasks: (itemId: string): Promise<PARATask[]> =>
+    apiClient(`/api/para/${itemId}/tasks`),
+
+  createTask: (itemId: string, task: Partial<PARATask>): Promise<PARATask> =>
+    apiClient(`/api/para/${itemId}/tasks`, {
+      method: 'POST',
+      body: JSON.stringify(task)
+    }),
+
+  updateTask: (itemId: string, taskId: string, updates: Partial<PARATask>): Promise<PARATask> =>
+    apiClient(`/api/para/${itemId}/tasks/${taskId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(updates)
+    }),
+
+  deleteTask: (itemId: string, taskId: string): Promise<void> =>
+    apiClient(`/api/para/${itemId}/tasks/${taskId}`, {
+      method: 'DELETE'
+    }),
+
+  // Notes
+  getNotes: (itemId: string): Promise<PARANote[]> =>
+    apiClient(`/api/para/${itemId}/notes`),
+
+  createNote: (itemId: string, content: string): Promise<PARANote> =>
+    apiClient(`/api/para/${itemId}/notes`, {
+      method: 'POST',
+      body: JSON.stringify({ content })
+    }),
+
+  updateNote: (itemId: string, noteId: string, content: string): Promise<PARANote> =>
+    apiClient(`/api/para/${itemId}/notes/${noteId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ content })
+    }),
+
+  deleteNote: (itemId: string, noteId: string): Promise<void> =>
+    apiClient(`/api/para/${itemId}/notes/${noteId}`, {
+      method: 'DELETE'
+    }),
+
+  // Files
+  getFiles: (itemId: string): Promise<PARAFile[]> =>
+    apiClient(`/api/para/${itemId}/files`),
+
+  createFile: (itemId: string, file: Partial<PARAFile>): Promise<PARAFile> =>
+    apiClient(`/api/para/${itemId}/files`, {
+      method: 'POST',
+      body: JSON.stringify(file)
+    }),
+
+  deleteFile: (itemId: string, fileId: string): Promise<void> =>
+    apiClient(`/api/para/${itemId}/files/${fileId}`, {
+      method: 'DELETE'
+    }),
+
+  // Relationships
+  getRelationships: (itemId: string): Promise<PARARelationship[]> =>
+    apiClient(`/api/para/${itemId}/relationships`),
+
+  createRelationship: (itemId: string, toItemId: string, relationshipType: string = 'related'): Promise<PARARelationship> =>
+    apiClient(`/api/para/${itemId}/relationships`, {
+      method: 'POST',
+      body: JSON.stringify({ to_item_id: toItemId, relationship_type: relationshipType })
+    }),
+
+  deleteRelationship: (itemId: string, relationshipId: string): Promise<void> =>
+    apiClient(`/api/para/${itemId}/relationships/${relationshipId}`, {
+      method: 'DELETE'
     }),
 }
 
