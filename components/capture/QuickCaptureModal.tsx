@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, Sparkles, FileText, CheckSquare, Upload, Camera, Mic, Loader2 } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { paraAPI } from '@/lib/api'
+import { captureAPI } from '@/lib/api'
 import { showToast } from '@/lib/toast'
 import { SuccessConfetti } from '@/components/animations/SuccessConfetti'
 
@@ -59,16 +59,29 @@ export function QuickCaptureModal({ isOpen, onClose, onSuccess }: QuickCaptureMo
     setIsProcessing(true)
 
     try {
-      // For now, use the existing PARA creation endpoint
-      // TODO: Replace with /api/capture/quick when backend is ready
-      const result = await paraAPI.createItem({
-        title: input,
-        description: selectedType !== 'auto' ? `Type: ${selectedType}` : ''
-      })
+      // Use dedicated quick capture endpoint with AI parsing
+      const result = await captureAPI.quickCapture(
+        input,
+        selectedType === 'file' || selectedType === 'photo' ? 'auto' : selectedType,
+        undefined
+      )
 
       // Success animation and notification
       setShowConfetti(true)
-      showToast.success(`✨ Captured! AI classified as ${result.para_type}`)
+
+      // Show AI classification with confidence
+      const classification = result.classification
+      const confidence = Math.round(classification.confidence * 100)
+      showToast.success(
+        `✨ Captured as ${classification.para_type}! (${confidence}% confident)`
+      )
+
+      // Show AI suggestions if available
+      if (result.suggestions.next_actions.length > 0) {
+        setTimeout(() => {
+          showToast.info(`💡 ${result.suggestions.next_actions[0]}`)
+        }, 800)
+      }
 
       // Trigger refresh
       window.dispatchEvent(new CustomEvent('para-item-created'))
@@ -91,9 +104,8 @@ export function QuickCaptureModal({ isOpen, onClose, onSuccess }: QuickCaptureMo
   }
 
   const handleVoiceCapture = () => {
-    setIsRecording(!isRecording)
-    // TODO: Implement voice recording when backend endpoint is ready
-    showToast.info('Voice capture coming soon!')
+    // Voice capture coming soon - backend endpoint ready at /api/capture/voice
+    showToast.info('🎤 Voice capture coming soon!')
   }
 
   // AI suggestion based on input

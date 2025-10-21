@@ -340,6 +340,48 @@ export const googleAPI = {
     }),
 }
 
+// Capture API
+export const captureAPI = {
+  quickCapture: (input: string, captureType?: 'auto' | 'task' | 'note', context?: string): Promise<{
+    created: { items: any[], primary_id: string, primary_type: string }
+    classification: { para_type: string, confidence: number, reasoning: string }
+    parsed: { title: string, description?: string, due_date?: string, priority?: string }
+    suggestions: { next_actions: string[], schedule_suggestion?: string }
+    usage: { tokens: number, cost_usd: number }
+  }> =>
+    apiClient('/api/capture/quick', {
+      method: 'POST',
+      body: JSON.stringify({ input, capture_type: captureType, context })
+    }),
+
+  transcribeVoice: async (audioBlob: Blob): Promise<{
+    text: string
+    language?: string
+    duration?: number
+    confidence?: number
+  }> => {
+    const { data: { session } } = await supabase.auth.getSession()
+
+    const formData = new FormData()
+    formData.append('audio', audioBlob, 'voice-recording.webm')
+
+    const response = await fetch(`${API_BASE_URL}/api/capture/voice`, {
+      method: 'POST',
+      headers: {
+        'Authorization': session?.access_token ? `Bearer ${session.access_token}` : '',
+      },
+      body: formData
+    })
+
+    if (!response.ok) {
+      const error = await response.text()
+      throw new Error(`API error: ${response.statusText} - ${error}`)
+    }
+
+    return response.json()
+  },
+}
+
 // Chat API (Conversational AI Agent)
 export const chatAPI = {
   // Send message to agent

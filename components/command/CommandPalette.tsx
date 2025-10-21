@@ -21,6 +21,8 @@ import {
   MessageSquare
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { searchAPI } from '@/lib/api'
+import type { PARAItem, Task } from '@/types'
 
 interface CommandPaletteProps {
   isOpen: boolean
@@ -200,6 +202,35 @@ const categoryColors = {
 export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
   const [search, setSearch] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
+  const [searchResults, setSearchResults] = useState<{
+    para_items: PARAItem[]
+    tasks: Task[]
+  }>({ para_items: [], tasks: [] })
+  const [isSearching, setIsSearching] = useState(false)
+
+  // Search backend when query changes
+  useEffect(() => {
+    const searchBackend = async () => {
+      if (search.length < 2) {
+        setSearchResults({ para_items: [], tasks: [] })
+        return
+      }
+
+      setIsSearching(true)
+      try {
+        const results = await searchAPI.all(search, 5)
+        setSearchResults(results)
+      } catch (error) {
+        console.error('Search failed:', error)
+        setSearchResults({ para_items: [], tasks: [] })
+      } finally {
+        setIsSearching(false)
+      }
+    }
+
+    const debounce = setTimeout(searchBackend, 300)
+    return () => clearTimeout(debounce)
+  }, [search])
 
   // Filter commands based on search
   const filteredCommands = commands.filter((command) => {
@@ -321,12 +352,100 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
 
               {/* Commands List */}
               <div className="overflow-y-auto max-h-[calc(100vh-200px)] sm:max-h-[60vh] p-4">
-                {Object.entries(groupedCommands).length === 0 ? (
+                {isSearching && search.length >= 2 ? (
+                  <div className="text-center py-12">
+                    <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-gradient-to-br from-para-project to-para-area flex items-center justify-center animate-spin">
+                      <RefreshCw className="w-6 h-6 text-white" />
+                    </div>
+                    <p className="text-sm text-muted-foreground">Searching...</p>
+                  </div>
+                ) : search.length >= 2 && (searchResults.para_items.length > 0 || searchResults.tasks.length > 0) ? (
+                  <div className="space-y-6">
+                    {/* Search Results - PARA Items */}
+                    {searchResults.para_items.length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wider mb-2 px-2 text-para-project">
+                          PARA Items
+                        </p>
+                        <div className="space-y-1">
+                          {searchResults.para_items.map((item) => (
+                            <motion.button
+                              key={item.id}
+                              onClick={() => {
+                                window.location.href = `/dashboard/${item.para_type}s/${item.id}`
+                                onClose()
+                              }}
+                              className="w-full flex items-center gap-4 p-3 rounded-2xl text-left transition-all duration-200
+                                         bg-white/50 dark:bg-white/5 border-2 border-transparent hover:border-border"
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                            >
+                              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-para-project to-para-area flex items-center justify-center">
+                                <Folder className="w-5 h-5 text-white" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-foreground">{item.title}</p>
+                                <p className="text-sm text-muted-foreground truncate">
+                                  {item.description || `${item.para_type} • ${item.status}`}
+                                </p>
+                              </div>
+                              <span className="px-2 py-1 text-xs rounded bg-para-project/10 text-para-project font-medium">
+                                {item.para_type}
+                              </span>
+                            </motion.button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Search Results - Tasks */}
+                    {searchResults.tasks.length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wider mb-2 px-2 text-para-area">
+                          Tasks
+                        </p>
+                        <div className="space-y-1">
+                          {searchResults.tasks.map((task) => (
+                            <motion.button
+                              key={task.id}
+                              onClick={() => {
+                                window.location.href = `/dashboard/tasks`
+                                onClose()
+                              }}
+                              className="w-full flex items-center gap-4 p-3 rounded-2xl text-left transition-all duration-200
+                                         bg-white/50 dark:bg-white/5 border-2 border-transparent hover:border-border"
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                            >
+                              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-para-area to-para-resource flex items-center justify-center">
+                                <CheckSquare className="w-5 h-5 text-white" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-foreground">{task.title}</p>
+                                <p className="text-sm text-muted-foreground truncate">
+                                  {task.description || `${task.priority} priority • ${task.status}`}
+                                </p>
+                              </div>
+                              <span className={`px-2 py-1 text-xs rounded font-medium ${
+                                task.priority === 'urgent' ? 'bg-red-100 text-red-700' :
+                                task.priority === 'high' ? 'bg-orange-100 text-orange-700' :
+                                task.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                                'bg-gray-100 text-gray-700'
+                              }`}>
+                                {task.priority}
+                              </span>
+                            </motion.button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : Object.entries(groupedCommands).length === 0 && search.length > 0 ? (
                   <div className="text-center py-12">
                     <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-para-project/20 to-para-area/20 flex items-center justify-center">
                       <Search className="w-8 h-8 text-muted-foreground" />
                     </div>
-                    <p className="text-sm text-muted-foreground">No commands found</p>
+                    <p className="text-sm text-muted-foreground">No results found</p>
                     <p className="text-xs text-muted-foreground mt-1">Try a different search term</p>
                   </div>
                 ) : (
