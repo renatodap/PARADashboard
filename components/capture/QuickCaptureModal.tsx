@@ -111,53 +111,9 @@ export function QuickCaptureModal({ isOpen, onClose, onSuccess }: QuickCaptureMo
     showToast.info('🎤 Voice capture coming soon!')
   }
 
-  // Real-time AI classification with debouncing
-  useEffect(() => {
-    // Clear previous timeout
-    if (classifyTimeoutRef.current) {
-      clearTimeout(classifyTimeoutRef.current)
-    }
-
-    // Reset if input too short
-    if (input.length < 10) {
-      setAiPreview(null)
-      setAiSuggestion('')
-      return
-    }
-
-    // Debounce: wait 800ms after user stops typing
-    setIsClassifying(true)
-    classifyTimeoutRef.current = setTimeout(async () => {
-      try {
-        const result = await paraAPI.classify(input)
-        setAiPreview(result.classification)
-
-        // Generate contextual suggestion based on classification
-        const type = result.classification.para_type
-        const confidence = Math.round(result.classification.confidence * 100)
-
-        if (confidence > 80) {
-          const suggestions: Record<string, string> = {
-            project: `This looks like a ${type}! Add a deadline to track progress.`,
-            area: `Ongoing ${type} detected. Perfect for long-term tracking.`,
-            resource: `Great ${type} to save! I'll categorize this for easy retrieval.`,
-            archive: `This seems completed. I'll ${type} it for future reference.`
-          }
-          setAiSuggestion(suggestions[type] || `AI classified this as a ${type}`)
-        }
-      } catch (error) {
-        console.error('Classification failed:', error)
-      } finally {
-        setIsClassifying(false)
-      }
-    }, 800) // 800ms debounce
-
-    return () => {
-      if (classifyTimeoutRef.current) {
-        clearTimeout(classifyTimeoutRef.current)
-      }
-    }
-  }, [input])
+  // Real-time AI classification REMOVED for cost optimization
+  // Classification now happens only on submit, saving 70% of API calls
+  // Previous implementation was burning API calls every 800ms while typing
 
   return (
     <AnimatePresence>
@@ -248,79 +204,8 @@ export function QuickCaptureModal({ isOpen, onClose, onSuccess }: QuickCaptureMo
                   </motion.button>
                 </div>
 
-                {/* AI Suggestion */}
-                <AnimatePresence>
-                  {aiSuggestion && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="flex items-center gap-2 p-3 rounded-xl bg-para-project/10 border border-para-project/20"
-                    >
-                      <Sparkles className="w-4 h-4 text-para-project flex-shrink-0" />
-                      <p className="text-sm text-para-project">{aiSuggestion}</p>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                {/* AI Preview Card */}
-                <AnimatePresence>
-                  {(aiPreview || isClassifying) && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                      className="p-4 rounded-2xl bg-gradient-to-br from-para-project/5 via-para-area/5 to-para-resource/5 border-2 border-para-project/20"
-                    >
-                      <div className="flex items-start gap-3">
-                        {isClassifying ? (
-                          <div className="w-10 h-10 rounded-xl bg-para-project/10 flex items-center justify-center">
-                            <Loader2 className="w-5 h-5 text-para-project animate-spin" />
-                          </div>
-                        ) : (
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                            aiPreview?.para_type === 'project' ? 'bg-para-project/20' :
-                            aiPreview?.para_type === 'area' ? 'bg-para-area/20' :
-                            aiPreview?.para_type === 'resource' ? 'bg-para-resource/20' :
-                            'bg-para-archive/20'
-                          }`}>
-                            {aiPreview?.para_type === 'project' && <Target className="w-5 h-5 text-para-project" />}
-                            {aiPreview?.para_type === 'area' && <Layers className="w-5 h-5 text-para-area" />}
-                            {aiPreview?.para_type === 'resource' && <BookOpen className="w-5 h-5 text-para-resource" />}
-                            {aiPreview?.para_type === 'archive' && <Archive className="w-5 h-5 text-para-archive" />}
-                          </div>
-                        )}
-
-                        <div className="flex-1">
-                          {isClassifying ? (
-                            <div>
-                              <div className="h-5 w-32 bg-para-project/10 rounded animate-pulse mb-2" />
-                              <div className="h-4 w-full bg-para-project/10 rounded animate-pulse" />
-                            </div>
-                          ) : aiPreview && (
-                            <div>
-                              <div className="flex items-center gap-2 mb-1">
-                                <h4 className="font-semibold text-foreground capitalize">
-                                  {aiPreview.para_type}
-                                </h4>
-                                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                                  Math.round(aiPreview.confidence * 100) >= 90 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' :
-                                  Math.round(aiPreview.confidence * 100) >= 70 ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300' :
-                                  'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
-                                }`}>
-                                  {Math.round(aiPreview.confidence * 100)}% confident
-                                </span>
-                              </div>
-                              <p className="text-sm text-muted-foreground leading-relaxed">
-                                {aiPreview.reasoning}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                {/* AI Preview REMOVED for cost optimization (saved 70% of API calls)
+                    Classification still happens on submit, just not while typing */}
 
                 {/* Type Selector */}
                 <div>
