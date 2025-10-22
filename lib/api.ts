@@ -446,3 +446,31 @@ export const chatAPI = {
       body: JSON.stringify({ reason })
     }),
 }
+
+// Insights API (AI Productivity Patterns)
+export const insightsAPI = {
+  // Get productivity patterns and AI insights
+  getPatterns: (): Promise<{
+    insights: Array<{
+      type: string
+      title: string
+      description: string
+      action: string
+      impact: 'high' | 'medium' | 'low'
+    }>
+  }> =>
+    apiClient('/api/insights/patterns'),
+
+  // Get reprioritization suggestions when overloaded
+  getReprioritization: (): Promise<{
+    needs_reprioritization: boolean
+    message?: string
+    suggestions?: {
+      keep: string[]
+      defer: string[]
+      reconsider: string[]
+    }
+    reasoning?: string
+  }> =>
+    apiClient('/api/insights/reprioritization'),
+}

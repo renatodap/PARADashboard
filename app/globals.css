@@ -151,9 +151,18 @@
     @apply transition-all duration-300 ease-bounce;
   }
 
-  /* Focus Ring */
+  /* Enhanced Focus States for Keyboard Navigation */
   .focus-ring {
-    @apply focus:outline-none focus:ring-4 focus:ring-para-project/10;
+    @apply focus:outline-none focus:ring-4 focus:ring-para-project/20;
+    @apply focus-visible:ring-4 focus-visible:ring-para-project/30;
+    @apply focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+
+  /* Skip to Content Link (Accessibility) */
+  .skip-link {
+    @apply fixed -top-16 left-4 z-[9999];
+    @apply bg-para-project text-white px-6 py-3 rounded-lg;
+    @apply focus:top-4 transition-all duration-200;
   }
 
   /* Shimmer Loading */
@@ -170,6 +179,28 @@
     background-image: linear-gradient(135deg, #7C3AED 0%, #A78BFA 100%);
   }
 
+  /* Hover Effects */
+  .hover-lift {
+    @apply transition-all duration-300 ease-smooth;
+    @apply hover:-translate-y-1 hover:shadow-lg;
+  }
+
+  .hover-glow {
+    @apply transition-all duration-300;
+    @apply hover:shadow-[0_0_20px_rgba(124,58,237,0.3)];
+  }
+
+  /* Animation Delays */
+  .delay-100 {
+    animation-delay: 100ms;
+  }
+  .delay-200 {
+    animation-delay: 200ms;
+  }
+  .delay-300 {
+    animation-delay: 300ms;
+  }
+
   /* Tap Target Sizing (Mobile-First) */
   .tap-target {
     @apply min-h-[48px] min-w-[48px];
@@ -182,5 +213,45 @@
 
   .safe-bottom {
     padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Smooth Entrance Animations */
+  .fade-in {
+    animation: fadeIn 0.5s ease-in;
+  }
+
+  .slide-up {
+    animation: slideUp 0.5s ease-out;
+  }
+
+  .scale-in {
+    animation: scaleIn 0.3s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
   }
 }

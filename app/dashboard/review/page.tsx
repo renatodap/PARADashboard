@@ -1,17 +1,21 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { reviewAPI } from '@/lib/api'
+import { motion } from 'framer-motion'
+import { reviewAPI, tasksAPI, paraAPI } from '@/lib/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { showToast } from '@/lib/toast'
 import type { WeeklyReview } from '@/types'
-import { Sparkles, FileText, TrendingUp, Calendar, CheckCircle2, Target } from 'lucide-react'
+import { Sparkles, FileText, TrendingUp, Calendar, CheckCircle2, Target, Archive, Edit, Plus, X, Check } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 
 export default function ReviewPage() {
   const [reviews, setReviews] = useState<WeeklyReview[]>([])
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState(false)
+  const [completedRollovers, setCompletedRollovers] = useState<Set<string>>(new Set())
+  const [acceptedProposals, setAcceptedProposals] = useState<Set<number>>(new Set())
 
   useEffect(() => {
     loadReviews()
@@ -33,10 +37,51 @@ export default function ReviewPage() {
     try {
       await reviewAPI.generate()
       await loadReviews()
+      showToast.success('Weekly review generated!')
     } catch (error) {
       console.error('Failed to generate review:', error)
+      showToast.error('Failed to generate review')
     } finally {
       setGenerating(false)
+    }
+  }
+
+  async function handleCompleteRollover(taskId: string) {
+    try {
+      await tasksAPI.updateTask(taskId, { status: 'completed', completed_at: new Date().toISOString() })
+      setCompletedRollovers(prev => new Set([...prev, taskId]))
+      showToast.success('Task completed!')
+    } catch (error) {
+      console.error('Failed to complete task:', error)
+      showToast.error('Failed to complete task')
+    }
+  }
+
+  async function handleRescheduleTask(taskId: string) {
+    try {
+      // Reschedule to tomorrow
+      const tomorrow = new Date()
+      tomorrow.setDate(tomorrow.getDate() + 1)
+      await tasksAPI.updateTask(taskId, { due_date: tomorrow.toISOString() })
+      showToast.success('Task rescheduled to tomorrow!')
+    } catch (error) {
+      console.error('Failed to reschedule task:', error)
+      showToast.error('Failed to reschedule task')
+    }
+  }
+
+  async function handleCreateTaskFromProposal(outcome: string, index: number) {
+    try {
+      await tasksAPI.createTask({
+        title: outcome,
+        status: 'pending',
+        priority: 'medium'
+      })
+      setAcceptedProposals(prev => new Set([...prev, index]))
+      showToast.success('Task created for next week!')
+    } catch (error) {
+      console.error('Failed to create task:', error)
+      showToast.error('Failed to create task')
     }
   }
 
@@ -158,13 +203,53 @@ export default function ReviewPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2">
-                  {latestReview.insights?.rollovers?.map((rollover, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm">
-                      <div className="w-4 h-4 rounded border-2 border-blue-600 mt-0.5 flex-shrink-0" />
-                      <span>{rollover.task_title}</span>
-                    </li>
-                  )) || (
+                <ul className="space-y-3">
+                  {latestReview.insights?.rollovers?.map((rollover, i) => {
+                    const isCompleted = rollover.task_id ? completedRollovers.has(rollover.task_id) : false
+                    return (
+                      <motion.li
+                        key={i}
+                        initial={{ opacity: 1 }}
+                        animate={{ opacity: isCompleted ? 0.5 : 1 }}
+                        className="group"
+                      >
+                        <div className="flex items-start gap-2">
+                          <div className={`w-4 h-4 rounded border-2 mt-0.5 flex-shrink-0 ${
+                            isCompleted ? 'bg-blue-600 border-blue-600' : 'border-blue-600'
+                          }`}>
+                            {isCompleted && <CheckCircle2 className="w-3 h-3 text-white" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <span className={`text-sm block ${isCompleted ? 'line-through text-muted-foreground' : ''}`}>
+                              {rollover.task_title}
+                            </span>
+                            {!isCompleted && rollover.task_id && (
+                              <div className="flex gap-1 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Button
+                                  onClick={() => handleCompleteRollover(rollover.task_id!)}
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 text-xs rounded-lg px-2"
+                                >
+                                  <Check className="w-3 h-3 mr-1" />
+                                  Complete
+                                </Button>
+                                <Button
+                                  onClick={() => handleRescheduleTask(rollover.task_id!)}
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 text-xs rounded-lg px-2"
+                                >
+                                  <Calendar className="w-3 h-3 mr-1" />
+                                  Tomorrow
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </motion.li>
+                    )
+                  }) || (
                     <li className="text-sm text-muted-foreground">No rollovers</li>
                   )}
                 </ul>
@@ -182,13 +267,44 @@ export default function ReviewPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2">
-                  {latestReview.insights?.next_week_proposals?.map((proposal, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm">
-                      <div className="w-4 h-4 rounded-full bg-purple-600 mt-0.5 flex-shrink-0" />
-                      <span>{proposal.outcome}</span>
-                    </li>
-                  )) || (
+                <ul className="space-y-3">
+                  {latestReview.insights?.next_week_proposals?.map((proposal, i) => {
+                    const isAccepted = acceptedProposals.has(i)
+                    return (
+                      <motion.li
+                        key={i}
+                        initial={{ opacity: 1 }}
+                        animate={{ opacity: isAccepted ? 0.5 : 1 }}
+                        className="group"
+                      >
+                        <div className="flex items-start gap-2">
+                          <div className={`w-4 h-4 rounded-full mt-0.5 flex-shrink-0 ${
+                            isAccepted ? 'bg-green-600' : 'bg-purple-600'
+                          }`}>
+                            {isAccepted && <CheckCircle2 className="w-3 h-3 text-white" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <span className={`text-sm block ${isAccepted ? 'line-through text-muted-foreground' : ''}`}>
+                              {proposal.outcome}
+                            </span>
+                            {!isAccepted && (
+                              <div className="mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Button
+                                  onClick={() => handleCreateTaskFromProposal(proposal.outcome, i)}
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 text-xs rounded-lg px-2"
+                                >
+                                  <Plus className="w-3 h-3 mr-1" />
+                                  Create Task
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </motion.li>
+                    )
+                  }) || (
                     <li className="text-sm text-muted-foreground">No focus areas</li>
                   )}
                 </ul>

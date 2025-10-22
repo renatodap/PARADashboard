@@ -30,6 +30,7 @@ export function FloatingActionButton({ onClick }: FloatingActionButtonProps) {
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
       className="fixed bottom-6 right-6 z-50 group"
+      data-tour="quick-capture-fab"
       initial={{ scale: 0, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       whileHover={{ scale: 1.1 }}

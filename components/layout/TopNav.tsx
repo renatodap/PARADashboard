@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { getCurrentUser, signOut } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import { NotificationCenter } from '@/components/notifications/NotificationCenter'
 
 interface TopNavProps {
   onMenuClick?: () => void
@@ -66,9 +67,9 @@ export function TopNav({ onMenuClick }: TopNavProps) {
       {/* Right side actions */}
       <div className="flex items-center gap-1 sm:gap-2">
         {/* Notifications */}
-        <Button variant="ghost" size="icon" className="hover:scale-105 transition-transform hidden sm:flex">
-          <Bell className="w-5 h-5" />
-        </Button>
+        <div className="hidden sm:block">
+          <NotificationCenter />
+        </div>
 
         {/* Settings */}
         <Button variant="ghost" size="icon" onClick={() => router.push('/dashboard/settings')} className="hover:scale-105 transition-transform hidden sm:flex">

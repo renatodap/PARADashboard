@@ -13,13 +13,15 @@ import {
   FileText,
   Sparkles,
   Upload,
-  X
+  X,
+  Brain
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 
 const navigation = [
   { name: 'Home', href: '/dashboard', icon: Home },
+  { name: 'AI Insights', href: '/dashboard/insights', icon: Brain },
   { name: 'Projects', href: '/dashboard/projects', icon: FolderKanban },
   { name: 'Areas', href: '/dashboard/areas', icon: Layers },
   { name: 'Resources', href: '/dashboard/resources', icon: BookOpen },
@@ -84,6 +86,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
                 key={item.name}
                 href={item.href}
                 onClick={onClose}
+                data-tour={item.name === 'AI Insights' ? 'ai-insights-nav' : undefined}
                 className={cn(
                   "flex items-center px-4 py-3 text-sm font-medium rounded-2xl transition-all duration-300 ease-smooth",
                   isActive

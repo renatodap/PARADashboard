@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { paraAPI, tasksAPI, reviewAPI } from '@/lib/api'
+import { paraAPI, tasksAPI, reviewAPI, insightsAPI } from '@/lib/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { PARACard } from '@/components/para/PARACard'
@@ -15,7 +15,7 @@ import { SkeletonCard } from '@/components/loading/SkeletonCard'
 import { SuccessConfetti } from '@/components/animations/SuccessConfetti'
 import { showToast } from '@/lib/toast'
 import type { PARAItem, Task, WeeklyReview } from '@/types'
-import { Sparkles, TrendingUp, Clock, Target, Brain, Zap, Calendar } from 'lucide-react'
+import { Sparkles, TrendingUp, Clock, Target, Brain, Zap, Calendar, CheckSquare } from 'lucide-react'
 
 export default function HomePage() {
   const [projects, setProjects] = useState<PARAItem[]>([])
@@ -25,6 +25,9 @@ export default function HomePage() {
   const [showConfetti, setShowConfetti] = useState(false)
   const [selectedEmail, setSelectedEmail] = useState<any>(null)
   const [emailModalOpen, setEmailModalOpen] = useState(false)
+  const [topInsight, setTopInsight] = useState<any>(null)
+  const [aiSuggestion, setAISuggestion] = useState<string>('')
+  const [aiPrioritizedTasks, setAIPrioritizedTasks] = useState<Task[]>([])
   const [stats, setStats] = useState({
     activeProjects: 0,
     todayTasks: 0,
@@ -56,10 +59,11 @@ export default function HomePage() {
 
   async function loadDashboardData() {
     try {
-      const [projectsData, tasksData, reviewData] = await Promise.all([
+      const [projectsData, tasksData, reviewData, insightsData] = await Promise.all([
         paraAPI.getItems('project'),
         tasksAPI.getTasks(),
-        reviewAPI.getReviews()
+        reviewAPI.getReviews(),
+        insightsAPI.getPatterns().catch(() => ({ insights: [] })) // Optional: don't fail if insights unavailable
       ])
 
       // Filter active projects
@@ -99,6 +103,19 @@ export default function HomePage() {
         completedThisWeek,
         upcomingDeadlines: upcoming
       })
+
+      // Set top insight from AI
+      if (insightsData.insights && insightsData.insights.length > 0) {
+        const highImpact = insightsData.insights.find((i: any) => i.impact === 'high')
+        setTopInsight(highImpact || insightsData.insights[0])
+      }
+
+      // Generate context-aware AI suggestion based on time of day
+      setAISuggestion(getContextualSuggestion(todaysTasks.length, completedThisWeek, upcoming, tasksData))
+
+      // AI-prioritize tasks for "Work On This Now" section
+      const prioritized = prioritizeTasksWithAI(tasksData, todaysTasks)
+      setAIPrioritizedTasks(prioritized.slice(0, 3)) // Top 3 tasks
     } catch (error) {
       console.error('Failed to load dashboard:', error)
     } finally {
@@ -185,26 +202,181 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* AI Insight Banner */}
-        {stats.todayTasks > 0 && (
+        {/* Morning Briefing - AI-Powered Proactive Insights */}
+        {(topInsight || aiSuggestion) && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="p-4 rounded-2xl bg-gradient-to-r from-para-project/10 via-para-area/10 to-para-resource/10 border border-para-project/20"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="relative overflow-hidden"
           >
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-para-project to-para-area flex items-center justify-center flex-shrink-0">
-                <Brain className="w-5 h-5 text-white" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-foreground mb-1">AI Suggestion</h3>
-                <p className="text-sm text-muted-foreground">
-                  {stats.todayTasks > 5
-                    ? "You have a busy day ahead. Consider time-blocking your calendar for better focus."
-                    : "Great job! You're on track for today. Focus on your top 3 priorities."}
-                </p>
-              </div>
-            </div>
+            <Card className="border-2 border-para-project/30 bg-gradient-to-br from-para-project/5 via-para-area/5 to-transparent shadow-xl">
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-3">
+                  <motion.div
+                    className="w-12 h-12 rounded-2xl bg-gradient-to-br from-para-project to-para-area flex items-center justify-center"
+                    animate={{
+                      boxShadow: [
+                        '0 0 0 0 rgba(139, 92, 246, 0.4)',
+                        '0 0 0 10px rgba(139, 92, 246, 0)',
+                        '0 0 0 0 rgba(139, 92, 246, 0)'
+                      ]
+                    }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: "easeInOut"
+                    }}
+                  >
+                    <Brain className="w-6 h-6 text-white" />
+                  </motion.div>
+                  <div>
+                    <h3 className="text-lg font-heading font-bold flex items-center gap-2">
+                      {getGreeting() === 'morning' && '☀️ Morning Briefing'}
+                      {getGreeting() === 'afternoon' && '🌤️ Afternoon Check-In'}
+                      {getGreeting() === 'evening' && '🌙 Evening Wind-Down'}
+                    </h3>
+                    <p className="text-xs text-muted-foreground">AI-powered productivity insights</p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Top AI Insight from Backend */}
+                {topInsight && (
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="p-4 rounded-xl bg-gradient-to-r from-para-project/10 to-para-area/10 border border-para-project/20"
+                  >
+                    <div className="flex items-start gap-3">
+                      <Zap className="w-5 h-5 text-para-project flex-shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-semibold text-foreground">{topInsight.title}</h4>
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                            topInsight.impact === 'high' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' :
+                            topInsight.impact === 'medium' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300' :
+                            'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                          }`}>
+                            {topInsight.impact.toUpperCase()}
+                          </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-2">{topInsight.description}</p>
+                        <div className="flex items-start gap-2 p-2 rounded-lg bg-para-area/5 border border-para-area/20">
+                          <Target className="w-4 h-4 text-para-area flex-shrink-0 mt-0.5" />
+                          <p className="text-sm font-medium text-para-area">{topInsight.action}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Contextual AI Suggestion */}
+                {aiSuggestion && (
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.1 }}
+                    className="flex items-start gap-3 p-3 rounded-xl bg-gradient-to-r from-para-area/5 to-para-resource/5 border border-para-area/20"
+                  >
+                    <Sparkles className="w-5 h-5 text-para-area flex-shrink-0 mt-0.5" />
+                    <p className="text-sm text-muted-foreground">{aiSuggestion}</p>
+                  </motion.div>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* Work On This Now - AI Prioritized Tasks */}
+        {aiPrioritizedTasks.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <Card data-tour="work-on-now" className="border-2 border-para-area/30 bg-gradient-to-br from-para-area/5 via-para-resource/5 to-transparent shadow-lg">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <motion.div
+                      className="w-10 h-10 rounded-xl bg-gradient-to-br from-para-area to-para-resource flex items-center justify-center"
+                      animate={{ rotate: [0, 5, -5, 0] }}
+                      transition={{
+                        duration: 3,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                      }}
+                    >
+                      <Target className="w-5 h-5 text-white" />
+                    </motion.div>
+                    <div>
+                      <h3 className="font-heading font-bold text-lg">Work On This Now</h3>
+                      <p className="text-xs text-muted-foreground">AI-prioritized based on urgency, energy, and time</p>
+                    </div>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {aiPrioritizedTasks.map((task, index) => (
+                  <motion.div
+                    key={task.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    className="group"
+                  >
+                    <div className="flex items-start gap-3 p-4 rounded-xl bg-gradient-to-r from-white/50 to-white/30 dark:from-white/5 dark:to-white/3 border border-para-area/20 hover:border-para-area/40 hover:shadow-md transition-all duration-300">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-para-area to-para-resource text-white font-bold text-sm flex-shrink-0">
+                        {index + 1}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-semibold text-foreground group-hover:text-para-area transition-colors">
+                            {task.title}
+                          </h4>
+                          {task.priority && (
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                              task.priority === 'high' || task.priority === 'urgent'
+                                ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+                                : task.priority === 'medium'
+                                ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
+                                : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                            }`}>
+                              {task.priority}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
+                          {task.description || getAIReasoning(task, index)}
+                        </p>
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                          {task.due_date && (
+                            <div className="flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              <span>Due {new Date(task.due_date).toLocaleDateString()}</span>
+                            </div>
+                          )}
+                          {task.estimated_duration_minutes && (
+                            <div className="flex items-center gap-1">
+                              <Zap className="w-3 h-3" />
+                              <span>{task.estimated_duration_minutes} min</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <Button
+                        onClick={() => handleTaskComplete(task.id)}
+                        size="sm"
+                        variant="ghost"
+                        className="rounded-xl hover:bg-para-area/10 group-hover:scale-110 transition-transform"
+                      >
+                        <CheckSquare className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </motion.div>
+                ))}
+              </CardContent>
+            </Card>
           </motion.div>
         )}
       </motion.div>
@@ -640,4 +812,166 @@ function getAIInsight(stats: any): string {
   }
 
   return `${activeProjects} active project${activeProjects !== 1 ? 's' : ''} and smooth sailing ahead.`
+}
+
+function getContextualSuggestion(todayTasksCount: number, completedThisWeek: number, upcoming: number, allTasks: Task[]): string {
+  const hour = new Date().getHours()
+  const greeting = getGreeting()
+
+  // Morning suggestions (5am - 12pm)
+  if (hour >= 5 && hour < 12) {
+    if (todayTasksCount === 0) {
+      return "Start your day strong! Review your upcoming tasks and schedule the most important ones for today."
+    }
+    if (todayTasksCount > 5) {
+      return "Your morning looks packed. Consider time-blocking 2-3 hours for deep work on your highest priority task."
+    }
+    // Find highest priority task
+    const highPriorityTask = allTasks.find((t: Task) =>
+      t.status !== 'completed' &&
+      (t.priority === 'high' || t.priority === 'urgent')
+    )
+    if (highPriorityTask) {
+      return `Your energy is highest now. Tackle "${highPriorityTask.title}" while you're fresh.`
+    }
+    return "Your most productive hours are now. Focus on your most challenging task first."
+  }
+
+  // Afternoon suggestions (12pm - 6pm)
+  if (hour >= 12 && hour < 18) {
+    if (completedThisWeek >= 5) {
+      return "Strong progress this week! Take a 10-minute break before diving into your next task."
+    }
+    if (todayTasksCount > 3) {
+      return "Afternoon energy dip? This is the perfect time for quick wins and lighter tasks."
+    }
+    return "Mid-day checkpoint: Review your morning progress and adjust your afternoon priorities."
+  }
+
+  // Evening suggestions (6pm - midnight)
+  if (hour >= 18) {
+    if (upcoming > 3) {
+      return `Wind down by planning tomorrow. You have ${upcoming} tasks due soon - schedule the top 3 for tomorrow morning.`
+    }
+    if (completedThisWeek < 3) {
+      return "Struggling this week? Try breaking down tomorrow's tasks into smaller, 25-minute chunks."
+    }
+    return "Great work today! Do a quick 5-minute review: what worked well? What will you improve tomorrow?"
+  }
+
+  // Default fallback
+  return "Stay focused on your top priorities. You're making progress!"
+}
+
+function prioritizeTasksWithAI(allTasks: Task[], todayTasks: Task[]): Task[] {
+  const hour = new Date().getHours()
+  const now = new Date()
+
+  // Filter incomplete tasks
+  const incompleteTasks = allTasks.filter((t: Task) => t.status !== 'completed')
+
+  // Score each task based on multiple factors
+  const scoredTasks = incompleteTasks.map((task: Task) => {
+    let score = 0
+
+    // Priority weight (highest impact)
+    if (task.priority === 'urgent') score += 100
+    else if (task.priority === 'high') score += 75
+    else if (task.priority === 'medium') score += 50
+    else if (task.priority === 'low') score += 25
+
+    // Due date urgency
+    if (task.due_date) {
+      const dueDate = new Date(task.due_date)
+      const daysUntilDue = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+
+      if (daysUntilDue < 0) score += 150 // Overdue - critical!
+      else if (daysUntilDue === 0) score += 120 // Due today
+      else if (daysUntilDue === 1) score += 90 // Due tomorrow
+      else if (daysUntilDue <= 3) score += 60 // Due this week
+      else if (daysUntilDue <= 7) score += 30 // Due next week
+    }
+
+    // Time of day energy matching
+    if (task.estimated_duration_minutes) {
+      const duration = task.estimated_duration_minutes
+
+      // Morning (5am-12pm): Prioritize longer, harder tasks
+      if (hour >= 5 && hour < 12) {
+        if (duration > 60) score += 40 // Long tasks in morning
+        else if (duration > 30) score += 20
+      }
+      // Afternoon (12pm-6pm): Prioritize medium tasks
+      else if (hour >= 12 && hour < 18) {
+        if (duration >= 20 && duration <= 45) score += 40 // Quick wins
+        else if (duration < 20) score += 30
+      }
+      // Evening (6pm+): Prioritize short, easy tasks
+      else if (hour >= 18) {
+        if (duration <= 20) score += 40 // Short tasks
+        else if (duration <= 30) score += 20
+      }
+    }
+
+    // Boost tasks scheduled for today
+    if (todayTasks.some(t => t.id === task.id)) {
+      score += 50
+    }
+
+    return { task, score }
+  })
+
+  // Sort by score descending
+  return scoredTasks
+    .sort((a, b) => b.score - a.score)
+    .map(item => item.task)
+}
+
+function getAIReasoning(task: Task, rank: number): string {
+  const now = new Date()
+  const hour = now.getHours()
+
+  // Check if overdue
+  if (task.due_date) {
+    const dueDate = new Date(task.due_date)
+    const daysUntilDue = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+
+    if (daysUntilDue < 0) {
+      return `⚠️ Overdue by ${Math.abs(daysUntilDue)} day${Math.abs(daysUntilDue) !== 1 ? 's' : ''}. Tackle this ASAP.`
+    }
+    if (daysUntilDue === 0) {
+      return `🔥 Due today! ${task.priority === 'high' ? 'High priority - do this first.' : 'Make this a priority.'}`
+    }
+    if (daysUntilDue === 1) {
+      return `⏰ Due tomorrow. Get ahead by finishing it today.`
+    }
+  }
+
+  // Time-based reasoning
+  if (hour >= 5 && hour < 12) {
+    if (rank === 0) return "☀️ Your energy is peak now. Perfect time for this challenging task."
+    if (task.estimated_duration_minutes && task.estimated_duration_minutes > 45) {
+      return "🧠 Long task best tackled while you're fresh in the morning."
+    }
+  }
+
+  if (hour >= 12 && hour < 18) {
+    if (task.estimated_duration_minutes && task.estimated_duration_minutes <= 30) {
+      return "⚡ Quick win perfect for afternoon energy levels."
+    }
+  }
+
+  if (hour >= 18) {
+    if (task.estimated_duration_minutes && task.estimated_duration_minutes <= 20) {
+      return "🌙 Light task ideal for winding down your day productively."
+    }
+  }
+
+  // Priority-based reasoning
+  if (task.priority === 'high' || task.priority === 'urgent') {
+    return `🎯 High priority task. ${rank === 0 ? 'Start here.' : 'Move this up your list.'}`
+  }
+
+  // Default
+  return "AI recommends focusing on this based on your current workload and timing."
 }

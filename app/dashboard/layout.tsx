@@ -7,6 +7,9 @@ import { FloatingActionButton } from '@/components/capture/FloatingActionButton'
 import { QuickCaptureModal } from '@/components/capture/QuickCaptureModal'
 import { CommandPalette } from '@/components/command/CommandPalette'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { RolloverAlerts } from '@/components/dashboard/RolloverAlerts'
+import { KeyboardShortcutsHelp } from '@/components/keyboard/KeyboardShortcutsHelp'
+import { OnboardingTour } from '@/components/onboarding/OnboardingTour'
 
 export default function DashboardLayout({
   children,
@@ -46,8 +49,20 @@ export default function DashboardLayout({
         {/* Main content */}
         <div className="flex-1 flex flex-col overflow-hidden">
           <TopNav onMenuClick={() => setSidebarOpen(true)} />
-          <main className="flex-1 overflow-y-auto p-4 sm:p-6">
-            {children}
+          <main className="flex-1 overflow-y-auto">
+            <div className="flex gap-6 p-4 sm:p-6">
+              {/* Primary content area */}
+              <div className="flex-1 min-w-0">
+                {children}
+              </div>
+
+              {/* Right sidebar - Rollover Alerts (hidden on mobile) */}
+              <aside className="hidden xl:block w-80 flex-shrink-0">
+                <div className="sticky top-6">
+                  <RolloverAlerts />
+                </div>
+              </aside>
+            </div>
           </main>
         </div>
 
@@ -63,6 +78,12 @@ export default function DashboardLayout({
           isOpen={commandPaletteOpen}
           onClose={() => setCommandPaletteOpen(false)}
         />
+
+        {/* Keyboard Shortcuts Help */}
+        <KeyboardShortcutsHelp />
+
+        {/* Onboarding Tour */}
+        <OnboardingTour />
       </div>
     </ErrorBoundary>
   )
