@@ -77,6 +77,17 @@ export function OnboardingTour() {
     }
   }, [])
 
+  // ESC key to close
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isActive) {
+        handleSkip()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isActive])
+
   useEffect(() => {
     if (!isActive) return
 
@@ -143,30 +154,82 @@ export function OnboardingTour() {
     }
 
     const spacing = 20
-    const positions: Record<string, any> = {
-      top: {
-        top: targetRect.top - spacing,
-        left: targetRect.left + targetRect.width / 2,
-        transform: 'translate(-50%, -100%)'
-      },
-      bottom: {
-        top: targetRect.bottom + spacing,
-        left: targetRect.left + targetRect.width / 2,
-        transform: 'translate(-50%, 0)'
-      },
-      left: {
-        top: targetRect.top + targetRect.height / 2,
-        left: targetRect.left - spacing,
-        transform: 'translate(-100%, -50%)'
-      },
-      right: {
-        top: targetRect.top + targetRect.height / 2,
-        left: targetRect.right + spacing,
-        transform: 'translate(0, -50%)'
-      }
+    const padding = 20 // Padding from viewport edges
+    const tooltipWidth = 450
+    const tooltipHeight = 400 // Approximate height
+
+    const viewport = {
+      width: window.innerWidth,
+      height: window.innerHeight
     }
 
-    return positions[step.position] || positions.center
+    // Calculate ideal position based on step.position
+    let top = 0
+    let left = 0
+    let transform = ''
+
+    switch (step.position) {
+      case 'top':
+        top = targetRect.top - spacing
+        left = targetRect.left + targetRect.width / 2
+        transform = 'translate(-50%, -100%)'
+        break
+      case 'bottom':
+        top = targetRect.bottom + spacing
+        left = targetRect.left + targetRect.width / 2
+        transform = 'translate(-50%, 0)'
+        break
+      case 'left':
+        top = targetRect.top + targetRect.height / 2
+        left = targetRect.left - spacing
+        transform = 'translate(-100%, -50%)'
+        break
+      case 'right':
+        top = targetRect.top + targetRect.height / 2
+        left = targetRect.right + spacing
+        transform = 'translate(0, -50%)'
+        break
+    }
+
+    // Adjust for viewport boundaries
+    // Calculate actual tooltip position after transform
+    const tooltipLeft = step.position === 'left' ? left - tooltipWidth :
+                        step.position === 'right' ? left :
+                        left - tooltipWidth / 2
+
+    const tooltipTop = step.position === 'top' ? top - tooltipHeight :
+                       step.position === 'bottom' ? top :
+                       top - tooltipHeight / 2
+
+    // If tooltip would go off-screen horizontally
+    if (tooltipLeft < padding) {
+      // Too far left - center it or move right
+      left = tooltipWidth / 2 + padding
+      transform = 'translate(-50%, -50%)'
+      top = targetRect.top + targetRect.height / 2
+    } else if (tooltipLeft + tooltipWidth > viewport.width - padding) {
+      // Too far right - center it or move left
+      left = viewport.width - tooltipWidth / 2 - padding
+      transform = 'translate(-50%, -50%)'
+      top = targetRect.top + targetRect.height / 2
+    }
+
+    // If tooltip would go off-screen vertically
+    if (tooltipTop < padding) {
+      // Too far up - move it down
+      top = padding
+      transform = transform.replace('-100%', '0')
+    } else if (tooltipTop + tooltipHeight > viewport.height - padding) {
+      // Too far down - move it up
+      top = viewport.height - padding
+      transform = transform.includes('translate(-50%')
+        ? 'translate(-50%, -100%)'
+        : transform.includes('translate(-100%')
+        ? 'translate(-100%, -100%)'
+        : 'translate(0, -100%)'
+    }
+
+    return { top, left, transform }
   }
 
   const step = tourSteps[currentStep]
@@ -178,7 +241,8 @@ export function OnboardingTour() {
         <>
           {/* Backdrop with spotlight */}
           <motion.div
-            className="fixed inset-0 z-[100]"
+            className="fixed inset-0 z-[100] cursor-pointer"
+            onClick={handleSkip}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
